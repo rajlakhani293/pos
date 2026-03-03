@@ -31,6 +31,8 @@ interface FormField {
   unCheckedText?: string;
   allowClear?: boolean;
   defaultValue?: any;
+  onAddNew?: () => void;
+  addNewLabel?: string;
   checkedValue?: any;
   unCheckedValue?: any;
 }
@@ -236,6 +238,8 @@ const DynamicForm = <T extends Record<string, any>>({
                     required={field.required}
                     placeholder={field.placeholder || `Select ${field.label}`}
                     error={errors[field.name]}
+                    onAddNew={field.onAddNew}
+                    addNewLabel={field.addNewLabel}
                   >
                     {field.options?.filter(option => option != null && option.value != null).map((option) => (
                       <SelectItem key={option.value} value={option.value.toString()}>

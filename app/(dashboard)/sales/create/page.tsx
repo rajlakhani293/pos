@@ -11,10 +11,8 @@ import { items } from "@/lib/api/items";
 import { getInitialFormValues, type FormField } from "@/lib/utils";
 import { UniFieldInput } from "@/components/ui/unifield-input";
 import { UniFieldSelect } from "@/components/ui/unifield-select";
-import {
-  SelectItem,
-} from "@/components/ui/select";
-import { ArrowRightIcon, CirclePlusIcon, Minus, PlusIcon, SearchIcon, TrashIcon } from "@/components/AppIcon";
+import { SelectItem} from "@/components/ui/select";
+import { SearchIcon, TrashIcon } from "@/components/AppIcon";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { PartyForm } from "@/app/(dashboard)/settings/parties/createUpdate";
 import { showToast } from "@/lib/toast";
@@ -41,8 +39,47 @@ export default function CreateSalePage() {
   const [selectedId, setSelectedId] = useState<any>(null);
   const [itemSearch, setItemSearch] = useState("");
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("all");
+  const [discountType, setDiscountType] = useState<"percentage" | "amount">("percentage");
 
   const debouncedItemSearch = useDebounce(itemSearch, 400);
+
+  const fetchParties = async () => {
+    try {
+      const result = await getParties({}).unwrap();
+      setParties((result as any)?.data?.map((item: any) => ({
+        label: item.name,
+        value: item.id
+      })) || []);
+    } catch (error) {
+      console.error("Failed to fetch parties:", error);
+    }
+  };
+
+  const fetchTaxes = async () => {
+    try {
+      const result = await getTaxes({}).unwrap();
+      setTaxes((result as any)?.data?.map((item: any) => ({
+        label: `${item.tax_name} (${item.tax_value}%)`,
+        value: item.id,
+        rate: item.tax_value
+      })) || []);
+    } catch (error) {
+      console.error("Failed to fetch taxes:", error);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const result = await getItemCategories({}).unwrap();
+      setItemCategories((result as any)?.data?.map((item: any) => ({
+        id: item.id,
+        name: item.category_name,
+        item_count: item.item_count,
+      })) || []);
+    } catch (error) {
+      console.error("Failed to fetch categories:", error);
+    }
+  };
 
   // Main sales form schema
   const SalesSchema: FormField[] = [
@@ -51,7 +88,9 @@ export default function CreateSalePage() {
       label: "Party", 
       type: "select",
       placeholder: "Select Party",
-      options: parties
+      options: parties,
+      onAddNew: () => handleOpenAddForm('party'),
+      addNewLabel: "Add New Party",
     },
     {
       name: "sales_date",
@@ -80,22 +119,13 @@ export default function CreateSalePage() {
       disabled: true
     },
     {
-      name: "discount_percentage",
-      label: "Discount Percentage",
+      name: "discount_value",
+      label: "Discount",
       type: "number",
-      placeholder: "0.00",
+      placeholder: discountType === "percentage" ? "0.00%" : "₹0.00",
       min: 0,
-      max: 100,
+      max: discountType === "percentage" ? 100 : undefined,
       step: 0.01
-    },
-    {
-      name: "discount_amount",
-      label: "Discount Amount",
-      type: "number",
-      placeholder: "0.00",
-      min: 0,
-      step: 0.01,
-      disabled: true
     },
     {
       name: "total_amount",
@@ -112,7 +142,6 @@ export default function CreateSalePage() {
       label: "Paid Amount",
       type: "number",
       placeholder: "0.00",
-      required: true,
       min: 0,
       step: 0.01
     },
@@ -141,12 +170,13 @@ export default function CreateSalePage() {
   const [formData, setFormData] = useState<any>(() => ({
     ...getInitialFormValues(SalesSchema),
     sales_date: new Date().toISOString().split('T')[0],
-    subtotal: "0.00",
-    tax_amount: "0.00",
-    discount_percentage: "0.00",
-    discount_amount: "0.00",
-    total_amount: "0.00",
-    paid_amount: "0.00",
+    subtotal: "",
+    tax_amount: "",
+    discount_percentage: "",
+    discount_amount: "",
+    discount_value: "",
+    total_amount: "",
+    paid_amount: "",
     payment_mode: "1",
     transactions: []
   }));
@@ -168,14 +198,21 @@ export default function CreateSalePage() {
     return '';
   };
 
+  const handleDiscountTypeChange = (type: "percentage" | "amount") => {
+    setDiscountType(type);
+    // Clear discount value when switching types
+    setFormData((prev: any) => ({ ...prev, discount_value: "" }));
+    // Recalculate totals will happen through useEffect
+  };
+
   const handleChange = (name: string, value: any) => {
     setFormData((prev: any) => ({ ...prev, [name]: value }));
     
     const error = validateField(name, value);
     setErrors((prev: any) => ({ ...prev, [name]: error }));
 
-    // Auto-calculate when discount percentage changes
-    if (name === 'discount_percentage') {
+    // Auto-calculate when discount value changes
+    if (name === 'discount_value') {
       calculateTotals();
     }
   };
@@ -210,8 +247,10 @@ export default function CreateSalePage() {
       };
     }) || [];
 
-    const discountPercentage = parseFloat(formData.discount_percentage) || 0;
-    const overallDiscountAmount = subtotal * (discountPercentage / 100);
+    const discountValue = parseFloat(formData.discount_value) || 0;
+    const overallDiscountAmount = discountType === "percentage" 
+      ? subtotal * (discountValue / 100)
+      : discountValue;
     const finalTotalAmount = subtotal - overallDiscountAmount + totalTaxAmount;
 
     setFormData((prev: any) => {
@@ -228,6 +267,7 @@ export default function CreateSalePage() {
         ...prev,
         transactions: updatedTransactions,
         subtotal: subtotal.toFixed(2),
+        discount_percentage: discountType === "percentage" ? formData.discount_value || "0" : "0",
         discount_amount: overallDiscountAmount.toFixed(2),
         tax_amount: totalTaxAmount.toFixed(2),
         total_amount: finalTotalAmount.toFixed(2)
@@ -244,9 +284,10 @@ export default function CreateSalePage() {
   };
 
   const removeTransaction = (index: number) => {
-    const newTransactions = formData.transactions.filter((_: any, i: number) => i !== index);
-    setFormData((prev: any) => ({ ...prev, transactions: newTransactions }));
-    calculateTotals();
+    setFormData((prev: any) => {
+      const newTransactions = prev.transactions.filter((_: any, i: number) => i !== index);
+      return { ...prev, transactions: newTransactions };
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -286,8 +327,8 @@ export default function CreateSalePage() {
           ...formData,
           subtotal: parseFloat(formData.subtotal),
           tax_amount: parseFloat(formData.tax_amount),
-          discount_percentage: parseFloat(formData.discount_percentage),
-          discount_amount: parseFloat(formData.discount_amount),
+          discount_percentage: discountType === "percentage" ? parseFloat(formData.discount_value || "0") : 0,
+          discount_amount: parseFloat(formData.discount_amount || "0"),
           total_amount: parseFloat(formData.total_amount),
           paid_amount: parseFloat(formData.paid_amount),
           payment_mode: parseInt(formData.payment_mode),
@@ -351,35 +392,17 @@ export default function CreateSalePage() {
     setItemsFromApiResponse(itemsResult, categoryId);
   };
 
-  const fetchPartiesAndItems = async () => {
-    if (parties.length > 0 && itemsList.length > 0) return;
+  const fetchPartiesAndItems = async (force: boolean = false) => {
+    if (!force && parties.length > 0 && itemsList.length > 0) return;
     
     try {
-      const [partiesResult, taxesResult, categoriesResult] = await Promise.all([
-        getParties({}).unwrap(),
-        getTaxes({}).unwrap(),
-        getItemCategories({}).unwrap(),
+      await Promise.all([
+        fetchParties(),
+        fetchTaxes(),
+        fetchCategories(),
       ]);
-      
-      setParties((partiesResult as any)?.data?.map((item: any) => ({
-        label: item.name,
-        value: item.id
-      })) || []);
-
-      setTaxes((taxesResult as any)?.data?.map((item: any) => ({
-        label: `${item.tax_name} (${item.tax_value}%)`,
-        value: item.id,
-        rate: item.tax_value
-      })) || []);
-
-      setItemCategories((categoriesResult as any)?.data?.map((item: any) => ({
-        id: item.id,
-        name: item.category_name,
-        item_count: item.item_count,
-      })) || []);
-
     } catch (error) {
-      console.error("Failed to fetch parties, items, taxes, and units:", error);
+      console.error("Failed to fetch parties, taxes, and categories:", error);
     } finally {
       setIsLoading(false);
     }
@@ -394,44 +417,6 @@ export default function CreateSalePage() {
   const handleCloseAddForm = () => {
     setAddFormOpen(null);
     setSelectedId(null);
-  };
-
-  const handleAddFormSuccess = () => {
-    handleCloseAddForm();
-    fetchPartiesAndItems();
-  };
-
-  // Custom select component with Add button inside dropdown
-  const SelectWithAddButton = ({ field, formType }: { field: FormField; formType: string }) => {
-    return (
-      <UniFieldSelect
-        label={field.label}
-        value={formData[field.name] || ''}
-        onValueChange={(value) => {
-          if (value === 'add_new') {
-            handleOpenAddForm(formType);
-          } else {
-            handleChange(field.name, value);
-          }
-        }}
-        placeholder={field.placeholder || `Select ${field.label}`}
-        required={field.required}
-        error={errors[field.name]}
-      >
-        {field.options?.filter(option => option != null && option.value != null).map((option) => (
-          <SelectItem key={option.value} value={option.value.toString()}>
-            {option.label}
-          </SelectItem>
-        ))}
-        <SelectItem value="add_new" className="border-t font-medium flex items-center justify-center">
-          <div className="flex items-center justify-center gap-2">
-            <CirclePlusIcon className="w-4 h-4" />
-            Add New {field.label}
-            <ArrowRightIcon className="size-3" />
-          </div>
-        </SelectItem>
-      </UniFieldSelect>
-    );
   };
 
   const filteredItems = useMemo(() => {
@@ -475,16 +460,6 @@ export default function CreateSalePage() {
     });
   };
 
-  const updateQuantity = (index: number, delta: number) => {
-    const currentQty = parseFloat(formData.transactions[index]?.item_quantity || "0");
-    const nextQty = currentQty + delta;
-    if (nextQty <= 0) {
-      removeTransaction(index);
-      return;
-    }
-    handleTransactionChange(index, "item_quantity", nextQty.toFixed(2).replace(/\.00$/, ""));
-  };
-
   const getItemById = (itemId: any) => itemsList.find((item) => item.value.toString() === itemId?.toString());
 
   useEffect(() => {
@@ -498,7 +473,7 @@ export default function CreateSalePage() {
 
   useEffect(() => {
     calculateTotals();
-  }, [formData.transactions, formData.discount_percentage, taxes]);
+  }, [formData.transactions, formData.discount_value, discountType, taxes]);
 
   if (isLoading) {
     return (
@@ -534,7 +509,7 @@ export default function CreateSalePage() {
                       <button
                         type="button"
                         onClick={() => setSelectedCategoryId("all")}
-                        className={`shrink-0 rounded-full border px-3 py-1 text-sm font-medium transition-colors hover:cursor-pointer ${selectedCategoryId === "all" ? "bg-black text-white border-black" : "bg-white text-gray-700 border-gray-200 hover:border-gray-900"}`}
+                        className={`shrink-0 rounded-full border px-3 py-1 text-sm font-medium transition-colors cursor-pointer ${selectedCategoryId === "all" ? "bg-black text-white" : "bg-white text-gray-700 border-gray-200 hover:bg-gray-100"}`}
                       >
                         All
                       </button>
@@ -543,10 +518,10 @@ export default function CreateSalePage() {
                           key={cat.id}
                           type="button"
                           onClick={() => setSelectedCategoryId(cat.id?.toString?.() || "all")}
-                          className={`shrink-0 rounded-full border px-3 py-1 text-sm font-medium transition-colors flex items-center gap-2 hover:cursor-pointer ${selectedCategoryId === cat.id?.toString?.() ? "bg-black text-white border-black" : "bg-white text-gray-700 border-gray-200 hover:border-gray-900"}`}
+                          className={`shrink-0 rounded-full border px-3 py-1 text-sm font-medium transition-colors flex items-center gap-2 cursor-pointer ${selectedCategoryId === cat.id?.toString?.() ? "bg-black text-white" : "bg-white text-gray-700 border-gray-200 hover:bg-gray-100"}`}
                         >
                           <span className="max-w-[160px] truncate">{cat.name}</span>
-                          <Badge variant="secondary" className={`${selectedCategoryId === cat.id?.toString?.() ? "bg-white/15 text-white border-0" : ""} border-0`}
+                          <Badge variant="outline" className={`${selectedCategoryId === cat.id?.toString?.() ? "bg-white text-black border-0" : ""} bg-gray-100`}
                           >
                             {cat.item_count}
                           </Badge>
@@ -601,13 +576,146 @@ export default function CreateSalePage() {
               </div>
 
               <div className="space-y-4 flex-2 min-w-0 p-4">
+                
                 <div className="bg-white">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Customer & Date</h3>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-lg font-semibold text-gray-900">Cart</h3>
+                    <p className="text-sm text-gray-500">{formData.transactions.length} items</p>
+                  </div>
+                  
+                  <div className="overflow-x-auto border rounded-lg border-gray-200">
+                    <table className="w-full text-sm text-left">
+                      <thead className="bg-gray-50 text-gray-700 uppercase text-[10px] font-bold">
+                        <tr>
+                          <th className="px-3 py-2">Item</th>
+                          <th className="px-3 py-2 w-24">Qty</th>
+                          <th className="px-3 py-2 w-24">Rate</th>
+                          <th className="px-3 py-2 text-right w-28">Amount</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {formData.transactions.length === 0 ? (
+                          <tr>
+                            <td colSpan={4} className="px-3 py-8 text-center text-gray-500 italic">
+                              Add items from the catalog.
+                            </td>
+                          </tr>
+                        ) : (
+                          formData.transactions.map((transaction: any, index: number) => {
+                            const selectedItem = getItemById(transaction.item_id);
+                            return (
+                              <tr key={index} className="hover:bg-gray-50 transition-colors group relative">
+                                <td className="pl-2 py-2">
+                                  <p className="font-semibold text-gray-900 line-clamp-1">{selectedItem?.label || "Unknown"}</p>
+                                  <p className="text-[10px] text-gray-500">{selectedItem?.item_code || "N/A"}</p>
+                                </td>
+                                <td className="px-1 py-2 w-24">
+                                   <UniFieldInput
+                                      type="number"
+                                      value={transaction.item_quantity || ""}
+                                      onChange={(e) => handleTransactionChange(index, "item_quantity", e.target.value)}
+                                      className="w-20 h-8"
+                                      min={0}
+                                      step="0.01"
+                                    />
+                                </td>
+                                <td className="px-1 py-2 w-24">
+                                  <UniFieldInput
+                                    type="number"
+                                    value={transaction.item_rate || ""}
+                                    onChange={(e) => handleTransactionChange(index, "item_rate", e.target.value)}
+                                    className="w-full h-8 text-xs"
+                                    placeholder="0.00"
+                                    step="0.01"
+                                  />
+                                </td>
+                                <td className="px-1 py-2 text-right w-28 font-bold text-gray-900 relative">
+                                  ₹{parseFloat(transaction.total_amount || "0").toFixed(2)}
+                                  
+                                  {/* Delete button overlay on hover */}
+                                  <div className="absolute inset-y-0 border right-0 rounded-l-lg flex items-center px-1 bg-white opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-full group-hover:translate-x-0">
+                                    <button
+                                      type="button"
+                                      onClick={() => removeTransaction(index)}
+                                      className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors cursor-pointer"
+                                      title="Remove item"
+                                    >
+                                      <TrashIcon className="w-4 h-4" />
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <div className="bg-white space-y-4">
+                  <div>
+                    <p className="text-sm font-medium text-gray-700 mb-2">Payment Mode</p>
+                    <ButtonGroup className="w-full">
+                      {SalesSchema.find((field) => field.name === "payment_mode")?.options?.map((option) => (
+                        <Button
+                          key={option.value}
+                          type="button"
+                          variant={formData.payment_mode?.toString() === option.value.toString() ? "default" : "outline"}
+                          className="flex-1"
+                          onClick={() => handleChange("payment_mode", option.value.toString())}
+                        >
+                          {option.label}
+                        </Button>
+                      ))}
+                    </ButtonGroup>
+                  </div>
+                  
+                  {formData.payment_mode === "3" && (
+                    <UniFieldInput
+                      label="Paid Amount"
+                      type="number"
+                      placeholder="0.00"
+                      value={formData.paid_amount || ""}
+                      onChange={(e) => handleChange("paid_amount", e.target.value)}
+                      required
+                      min={0}
+                      step={0.01}
+                      error={errors.paid_amount}
+                    />
+                  )}
+                  <UniFieldInput
+                    label="Notes"
+                    type="textarea"
+                    placeholder="Enter any additional notes..."
+                    value={formData.notes || ""}
+                    onChange={(e) => handleChange("notes", e.target.value)}
+                    as="textarea"
+                    rows={3}
+                  />
+                </div>
+
+                <div className="bg-white">
                   <div className="space-y-4">
                     {SalesSchema.filter(field => ["party_id", "sales_date"].includes(field.name)).map((field) => (
                       <div key={field.name}>
                         {field.name === "party_id" ? (
-                          <SelectWithAddButton field={field} formType="party" />
+                          <UniFieldSelect
+                            label={field.label}
+                            value={formData[field.name] || ''}
+                            onValueChange={(value) => handleChange(field.name, value)}
+                            placeholder={field.placeholder || `Select ${field.label}`}
+                            required={field.required}
+                            error={errors[field.name]}
+                            onAddNew={field.onAddNew}
+                            addNewLabel={field.addNewLabel}
+                          >
+                           {field.options?.filter(option => option != null && option.value != null).map((option) => (
+                              <SelectItem key={option.value} value={option.value.toString()}>
+                                {option.label}
+                              </SelectItem>
+                            ))}
+                          </UniFieldSelect>
                         ) : (
                           <UniFieldInput
                             label={field.label}
@@ -627,128 +735,6 @@ export default function CreateSalePage() {
                   </div>
                 </div>
 
-                <div className="bg-white">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900">Cart</h3>
-                    <p className="text-sm text-gray-500">{formData.transactions.length} items</p>
-                  </div>
-                  <div className="space-y-3 max-h-[42vh] overflow-y-auto pr-1">
-                    {formData.transactions.length === 0 && (
-                      <div className="rounded-md border border-dashed border-gray-300 p-4 text-center text-sm text-gray-500">
-                        Add items from the catalog to start billing.
-                      </div>
-                    )}
-                    {formData.transactions.map((transaction: any, index: number) => {
-                      const selectedItem = getItemById(transaction.item_id);
-                      return (
-                        <div key={index} className="rounded-md border border-gray-200 p-3 space-y-3">
-                          <div className="flex items-start justify-between gap-2">
-                            <div>
-                              <p className="text-sm font-semibold text-gray-900">{selectedItem?.label || "Unknown item"}</p>
-                              <p className="text-xs text-gray-500">{selectedItem?.item_code || "No code"}</p>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => removeTransaction(index)}
-                              className="text-red-500 hover:text-red-600"
-                            >
-                              <TrashIcon className="w-4 h-4" />
-                            </button>
-                          </div>
-                          <div className="grid grid-cols-2 gap-3">
-                            <div className="flex items-center gap-2">
-                              <Button type="button" size="icon" variant="outline" onClick={() => updateQuantity(index, -1)}>
-                                <Minus className="w-4 h-4" />
-                              </Button>
-                              <UniFieldInput
-                                value={transaction.item_quantity || "1"}
-                                onChange={(e) => handleTransactionChange(index, "item_quantity", e.target.value)}
-                                type="number"
-                                min="0.01"
-                                step="0.01"
-                                className="text-center"
-                              />
-                              <Button type="button" size="icon" variant="outline" onClick={() => updateQuantity(index, 1)}>
-                                <PlusIcon className="w-4 h-4" />
-                              </Button>
-                            </div>
-                            <UniFieldInput
-                              type="number"
-                              value={transaction.item_rate || ""}
-                              onChange={(e) => handleTransactionChange(index, "item_rate", e.target.value)}
-                              placeholder="Rate"
-                              min="0"
-                              step="0.01"
-                            />
-                            <UniFieldInput
-                              type="number"
-                              value={transaction.discount_percentage || ""}
-                              onChange={(e) => handleTransactionChange(index, "discount_percentage", e.target.value)}
-                              placeholder="Discount %"
-                              min="0"
-                              max="100"
-                              step="0.01"
-                            />
-                            <UniFieldSelect
-                              value={transaction.tax_id || ""}
-                              onValueChange={(value) => handleTransactionChange(index, "tax_id", value)}
-                              placeholder="Tax"
-                            >
-                              {taxes.map((tax) => (
-                                <SelectItem key={tax.value} value={tax.value.toString()}>
-                                  {tax.label}
-                                </SelectItem>
-                              ))}
-                            </UniFieldSelect>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-sm font-bold text-gray-900">₹{parseFloat(transaction.total_amount || "0").toFixed(2)}</p>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className="bg-white space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Payment</h3>
-                  <UniFieldInput
-                    label="Paid Amount"
-                    type="number"
-                    placeholder="0.00"
-                    value={formData.paid_amount || ""}
-                    onChange={(e) => handleChange("paid_amount", e.target.value)}
-                    required
-                    min={0}
-                    step={0.01}
-                    error={errors.paid_amount}
-                  />
-                  <div>
-                    <p className="text-sm font-medium text-gray-700 mb-2">Payment Mode</p>
-                    <ButtonGroup className="w-full">
-                      {SalesSchema.find((field) => field.name === "payment_mode")?.options?.map((option) => (
-                        <Button
-                          key={option.value}
-                          type="button"
-                          variant={formData.payment_mode?.toString() === option.value.toString() ? "default" : "outline"}
-                          className="flex-1"
-                          onClick={() => handleChange("payment_mode", option.value.toString())}
-                        >
-                          {option.label}
-                        </Button>
-                      ))}
-                    </ButtonGroup>
-                  </div>
-                  <UniFieldInput
-                    label="Notes"
-                    type="textarea"
-                    placeholder="Enter any additional notes..."
-                    value={formData.notes || ""}
-                    onChange={(e) => handleChange("notes", e.target.value)}
-                    as="textarea"
-                    rows={3}
-                  />
-                </div>
 
                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 shadow-sm space-y-2">
                   <div className="flex items-center justify-between text-sm">
@@ -772,6 +758,40 @@ export default function CreateSalePage() {
                     <p className={`font-bold ${(parseFloat(formData.total_amount) - parseFloat(formData.paid_amount)) > 0 ? "text-red-500" : "text-green-600"}`}>
                       ₹{(parseFloat(formData.total_amount) - parseFloat(formData.paid_amount)).toFixed(2)}
                     </p>
+                  </div>
+                  
+                  <div className="border-t pt-3 mt-3">
+                    <p className="text-sm font-medium text-gray-700 mb-2">Discount</p>
+                    <div className="flex gap-2">
+                      <ButtonGroup className="flex-1">
+                        <Button
+                          type="button"
+                          variant={discountType === "percentage" ? "default" : "outline"}
+                          className="flex-1"
+                          onClick={() => handleDiscountTypeChange("percentage")}
+                        >
+                          %
+                        </Button>
+                        <Button
+                          type="button"
+                          variant={discountType === "amount" ? "default" : "outline"}
+                          className="flex-1"
+                          onClick={() => handleDiscountTypeChange("amount")}
+                        >
+                          ₹
+                        </Button>
+                      </ButtonGroup>
+                      <UniFieldInput
+                        type="number"
+                        placeholder={discountType === "percentage" ? "0.00%" : "₹0.00"}
+                        value={formData.discount_value || ""}
+                        onChange={(e) => handleChange("discount_value", e.target.value)}
+                        min={0}
+                        max={discountType === "percentage" ? 100 : undefined}
+                        step={0.01}
+                        className="flex-2 min-w-[100px]"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -805,13 +825,13 @@ export default function CreateSalePage() {
         </div>
 
         {/* Add Forms */}
-        <PartyForm
-          isOpen={addFormOpen === 'party'}
-          onClose={handleCloseAddForm}
-          onSuccess={handleAddFormSuccess}
-          id={selectedId?.id}
-          title={selectedId ? `Edit Party` : `Add Party`}
-        />
+         <PartyForm
+           isOpen={addFormOpen === 'party'}
+           onClose={handleCloseAddForm}
+           onSuccess={() => { handleCloseAddForm(); fetchParties(); }}
+           id={selectedId?.id}
+           title={selectedId ? `Edit Party` : `Add Party`}
+         />
     </div>
   );
 }

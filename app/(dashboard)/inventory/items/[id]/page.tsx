@@ -9,7 +9,7 @@ import { getInitialFormValues, type FormField } from "@/lib/utils";
 import { UniFieldInput } from "@/components/ui/unifield-input";
 import { UniFieldSelect } from "@/components/ui/unifield-select";
 import { SelectItem } from "@/components/ui/select";
-import { ArrowRightIcon, CirclePlusIcon, LeftIcon } from "@/components/AppIcon";
+import { LeftIcon } from "@/components/AppIcon";
 import { CategoryForm } from "@/app/(dashboard)/inventory/categories/createUpdate";
 import { UnitForm } from "@/app/(dashboard)/inventory/units/createUpdate";
 import { BrandForm } from "@/app/(dashboard)/settings/brands/createUpdate";
@@ -44,6 +44,42 @@ export default function ItemPage() {
   const contentRef = useRef<HTMLDivElement>(null);
   const lastFetchedIdRef = useRef<string | null>(null);
 
+  const fetchCategories = async () => {
+    try {
+      const result = await getCategories({}).unwrap();
+      setCategories((result as any)?.data?.map((item: any) => ({
+        label: item.category_name,
+        value: item.id
+      })) || []);
+    } catch (error) {
+      console.error("Failed to fetch categories:", error);
+    }
+  };
+
+  const fetchUnits = async () => {
+    try {
+      const result = await getUnits({}).unwrap();
+      setUnits((result as any)?.data?.map((item: any) => ({
+        label: item.unit_name,
+        value: item.id
+      })) || []);
+    } catch (error) {
+      console.error("Failed to fetch units:", error);
+    }
+  };
+
+  const fetchBrands = async () => {
+    try {
+      const result = await getBrands({}).unwrap();
+      setBrands((result as any)?.data?.map((item: any) => ({
+        label: item.brand_name,
+        value: item.id
+      })) || []);
+    } catch (error) {
+      console.error("Failed to fetch brands:", error);
+    }
+  };
+
   const Schema: FormField[] = [
     { 
       name: "item_name", 
@@ -57,7 +93,9 @@ export default function ItemPage() {
       type: "select",
       placeholder: "Select Category",
       required: true,
-      options: categories
+      options: categories,
+      onAddNew: () => handleOpenAddForm('category'),
+      addNewLabel: "Add New Category"
     },
     {
       name: "purchase_price",
@@ -82,22 +120,24 @@ export default function ItemPage() {
       min: 0,
       step: 0.01
     },
-    {
-      name: "min_stock_level",
-      label: "Minimum Stock Level",
-      type: "number",
-      placeholder: "0.00",
-      required: true,
-      min: 0,
-      step: 0.01
-    },
+    // {
+    //   name: "min_stock_level",
+    //   label: "Minimum Stock Level",
+    //   type: "number",
+    //   placeholder: "0.00",
+    //   required: true,
+    //   min: 0,
+    //   step: 0.01
+    // },
     {
       name: "primary_unit_id",
       label: "Primary Unit",
       type: "select",
       placeholder: "Select Unit",
       required: true,
-      options: units
+      options: units,
+      onAddNew: () => handleOpenAddForm('unit'),
+      addNewLabel: "Add New Unit"
     },
     {
       name: "item_weight",
@@ -112,7 +152,9 @@ export default function ItemPage() {
       label: "Brand",
       type: "select",
       placeholder: "Select Brand",
-      options: brands
+      options: brands,
+      onAddNew: () => handleOpenAddForm('brand'),
+      addNewLabel: "Add New Brand"
     },
     {
       name: "barcode",
@@ -164,6 +206,8 @@ export default function ItemPage() {
 
 
   const handleSubmit = async (e: React.FormEvent) => {
+    console.log("save");
+    
     e.preventDefault();
     setIsSubmitting(true);
 
@@ -237,29 +281,15 @@ export default function ItemPage() {
     }
   };
 
-  const fetchCategoriesAndUnits = async () => {
-    // Only fetch if we don't have categories or units already
-    if (categories.length > 0 && units.length > 0) return;
+  const fetchCategoriesAndUnits = async (force: boolean = false) => {
+    if (!force && categories.length > 0 && units.length > 0) return;
     
     try {
-      const [categoriesResult, unitsResult, brandsResult] = await Promise.all([
-        getCategories({}).unwrap(),
-        getUnits({}).unwrap(),
-        getBrands({}).unwrap()
+      await Promise.all([
+        fetchCategories(),
+        fetchUnits(),
+        fetchBrands()
       ]);
-      
-      setCategories((categoriesResult as any)?.data?.map((item: any) => ({
-        label: item.category_name,
-        value: item.id
-      })) || []);
-      setUnits((unitsResult as any)?.data?.map((item: any) => ({
-        label: item.unit_name,
-        value: item.id
-      })) || []);
-      setBrands((brandsResult as any)?.data?.map((item: any) => ({
-        label: item.brand_name,
-        value: item.id
-      })) || []);
     } catch (error) {
       console.error("Failed to fetch categories, units and brands:", error);
     }
@@ -274,44 +304,6 @@ export default function ItemPage() {
   const handleCloseAddForm = () => {
     setAddFormOpen(null);
     setSelectedId(null);
-  };
-
-  const handleAddFormSuccess = () => {
-    handleCloseAddForm();
-    fetchCategoriesAndUnits();
-  };
-
-  // Custom select component with Add button inside dropdown
-  const SelectWithAddButton = ({ field, formType }: { field: FormField; formType: string }) => {
-    return (
-      <UniFieldSelect
-        label={field.label}
-        value={formData[field.name] || ''}
-        onValueChange={(value) => {
-          if (value === 'add_new') {
-            handleOpenAddForm(formType);
-          } else {
-            handleChange(field.name, value);
-          }
-        }}
-        placeholder={field.placeholder || `Select ${field.label}`}
-        required={field.required}
-        error={errors[field.name]}
-      >
-        {field.options?.filter(option => option != null && option.value != null).map((option) => (
-          <SelectItem key={option.value} value={option.value.toString()}>
-            {option.label}
-          </SelectItem>
-        ))}
-        <SelectItem value="add_new" className="border-t font-medium flex items-center justify-center">
-          <div className="flex items-center justify-center gap-2">
-            <CirclePlusIcon className="w-4 h-4" />
-            Add New {field.label}
-            <ArrowRightIcon className="size-3" />
-          </div>
-        </SelectItem>
-      </UniFieldSelect>
-    );
   };
 
   useEffect(() => {
@@ -403,26 +395,22 @@ export default function ItemPage() {
                     {Schema.filter(field => ['item_name', 'category_id', 'brand', 'barcode'].includes(field.name)).map((field) => (
                       <div key={field.name}>
                         {field.type === "select" ? (
-                          field.name === 'category_id' ? (
-                            <SelectWithAddButton field={field} formType="category" />
-                          ) : field.name === 'brand' ? (
-                            <SelectWithAddButton field={field} formType="brand" />
-                          ) : (
-                            <UniFieldSelect
-                              label={field.label}
-                              value={formData[field.name] || ''}
-                              onValueChange={(value) => handleChange(field.name, value)}
-                              placeholder={field.placeholder || `Select ${field.label}`}
-                              required={field.required}
-                              error={errors[field.name]}
-                            >
-                              {field.options?.filter(option => option != null && option.value != null).map((option) => (
-                                <SelectItem key={option.value} value={option.value.toString()}>
-                                  {option.label}
-                                </SelectItem>
-                              ))}
-                            </UniFieldSelect>
-                          )
+                         <UniFieldSelect
+                            label={field.label}
+                            value={formData[field.name] || ''}
+                            onValueChange={(value) => handleChange(field.name, value)}
+                            placeholder={field.placeholder || `Select ${field.label}`}
+                            required={field.required}
+                            error={errors[field.name]}
+                            onAddNew={field.onAddNew}
+                            addNewLabel={field.addNewLabel}
+                          >
+                           {field.options?.filter(option => option != null && option.value != null).map((option) => (
+                              <SelectItem key={option.value} value={option.value.toString()}>
+                                {option.label}
+                              </SelectItem>
+                            ))}
+                          </UniFieldSelect>
                         ) : (
                           <UniFieldInput
                             label={field.label}
@@ -467,10 +455,25 @@ export default function ItemPage() {
                 <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Inventory & Compliance</h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {Schema.filter(field => ['opening_stock', 'primary_unit_id', 'item_weight'].includes(field.name)).map((field) => (
+                    {Schema.filter(field => ['opening_stock', 'primary_unit_id', 'min_stock_level', 'item_weight'].includes(field.name)).map((field) => (
                       <div key={field.name}>
-                        {field.name === 'primary_unit_id' ? (
-                          <SelectWithAddButton field={field} formType="unit" />
+                        {field.type === "select" ? (
+                          <UniFieldSelect
+                            label={field.label}
+                            value={formData[field.name] || ''}
+                            onValueChange={(value) => handleChange(field.name, value)}
+                            placeholder={field.placeholder || `Select ${field.label}`}
+                            required={field.required}
+                            error={errors[field.name]}
+                            onAddNew={field.onAddNew}
+                            addNewLabel={field.addNewLabel}
+                          >
+                            {field.options?.filter(option => option != null && option.value != null).map((option) => (
+                              <SelectItem key={option.value} value={option.value.toString()}>
+                                {option.label}
+                              </SelectItem>
+                            ))}
+                          </UniFieldSelect>
                         ) : (
                           <UniFieldInput
                             label={field.label}
@@ -575,27 +578,27 @@ export default function ItemPage() {
         </div>
         
         {/* Add Forms */}
-        <CategoryForm
-          isOpen={addFormOpen === 'category'}
-          onClose={handleCloseAddForm}
-          onSuccess={handleAddFormSuccess}
-          id={selectedId?.id}
-          title={selectedId ? `Edit Item Category` : `Add Item Category`}
-        />
-        <UnitForm
-          isOpen={addFormOpen === 'unit'}
-          onClose={handleCloseAddForm}
-          onSuccess={handleAddFormSuccess}
-          id={selectedId?.id}
-          title={selectedId ? `Edit Item Unit` : `Add Item Unit`}
-        />
-        <BrandForm
-          isOpen={addFormOpen === 'brand'}
-          onClose={handleCloseAddForm}
-          onSuccess={handleAddFormSuccess}
-          id={selectedId?.id}
-          title={selectedId ? `Edit Brand` : `Add Brand`}
-        />
+         <CategoryForm
+           isOpen={addFormOpen === 'category'}
+           onClose={handleCloseAddForm}
+           onSuccess={() => { handleCloseAddForm(); fetchCategories(); }}
+           id={selectedId?.id}
+           title={selectedId ? `Edit Item Category` : `Add Item Category`}
+         />
+         <UnitForm
+           isOpen={addFormOpen === 'unit'}
+           onClose={handleCloseAddForm}
+           onSuccess={() => { handleCloseAddForm(); fetchUnits(); }}
+           id={selectedId?.id}
+           title={selectedId ? `Edit Item Unit` : `Add Item Unit`}
+         />
+         <BrandForm
+           isOpen={addFormOpen === 'brand'}
+           onClose={handleCloseAddForm}
+           onSuccess={() => { handleCloseAddForm(); fetchBrands(); }}
+           id={selectedId?.id}
+           title={selectedId ? `Edit Brand` : `Add Brand`}
+         />
     </div>
   );
 }

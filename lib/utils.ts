@@ -108,6 +108,8 @@ export type FormField = {
   custom_msg?: string;
   showCheckbox?: boolean;
   allowClear?: boolean;
+  onAddNew?: () => void;
+  addNewLabel?: string;
   [key: string]: any;
 };
 

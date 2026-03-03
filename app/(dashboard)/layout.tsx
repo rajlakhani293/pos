@@ -5,7 +5,6 @@ import React, { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { AppSidebar } from "@/components/app-sidebar";
-import { SidebarProvider } from "@/components/ui/sidebar";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Spinner } from "@/components/ui/spinner";
 
@@ -33,15 +32,13 @@ export default function DashboardLayout({
 
   return (
     <>
-      <div className="flex h-screen w-full overflow-hidden">
+      <div className="flex h-screen w-full overflow-hidden p-2 gap-1 bg-gray-100">
 
         <aside className="h-full shrink-0">
-          <SidebarProvider>
-            <AppSidebar />
-          </SidebarProvider>
+          <AppSidebar />
         </aside>
 
-        <div className="flex flex-col flex-1 min-w-0">
+        <div className="flex flex-col flex-1 min-w-0 rounded-2xl bg-white border border-gray-200 overflow-hidden">
           <Header />
           <main
             className={cn(
