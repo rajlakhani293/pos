@@ -10,9 +10,10 @@ import {
 } from "@/components/ui/sidebar";
 import SidebarHeader from "@/components/ui/sidebar-header";
 import { DashboardIcon, InventoryIcon, SettingIcon, SalesIcon } from "@/components/AppIcon";
+import { useSidebar } from "@/components/ui/sidebar-context";
 
 // Navigation data
-const navData = [
+export const navData = [
   {
     label: "Dashboard",
     href: "/dashboard",
@@ -50,14 +51,9 @@ const navData = [
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const { isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen, toggleSidebar } = useSidebar();
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
   const [openDropdowns, setOpenDropdowns] = useState<Set<string>>(new Set());
-
-  const toggleSidebar = () => {
-    setIsCollapsed(!isCollapsed);
-  };
 
   const closeMobile = () => {
     setIsMobileOpen(false);
@@ -77,6 +73,12 @@ export function AppSidebar() {
 
   const isActive = (href: string) => {
     if (href === "/settings/taxes" && pathname.startsWith("/settings/")) {
+      return true;
+    }
+    if (href === "/sales" && pathname.startsWith("/sales/")) {
+      return true;
+    }
+    if (href === "/inventory/items" && pathname.startsWith("/inventory/items")) {
       return true;
     }
     return pathname === href;

@@ -32,6 +32,12 @@ export const UniFieldInput = React.forwardRef<HTMLInputElement, UniFieldInputPro
   }, ref) => {
     const inputId = id || label?.toLowerCase().replace(/\s+/g, '-')
     
+    const handleWheel = (e: React.WheelEvent<HTMLInputElement>) => {
+      if (props.type === 'number') {
+        e.currentTarget.blur()
+      }
+    }
+    
     return (
       <Field data-invalid={error ? true : undefined} className={cn("gap-1", containerClassName)}>
         {label && (
@@ -77,6 +83,7 @@ export const UniFieldInput = React.forwardRef<HTMLInputElement, UniFieldInputPro
               aria-invalid={error ? true : undefined}
               {...props}
               onChange={onChange as any}
+              onWheel={handleWheel}
             />
           )}
           {suffix && (

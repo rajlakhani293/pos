@@ -66,7 +66,6 @@ const Categories = () => {
 
   return (
     <>
-      <div className="p-4">
         <DynamicTable
           tableTitle="Item Categories"
           title="Add Item Category"
@@ -90,7 +89,6 @@ const Categories = () => {
           isLoading={isLoading}
           onEdit={handleEditItem}
         />
-      </div>
 
       <CategoryForm
         isOpen={isAddEntityOpen}

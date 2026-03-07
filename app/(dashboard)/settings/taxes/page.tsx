@@ -66,7 +66,6 @@ const Taxes = () => {
 
   return (
     <>
-      <div className="p-4">
         <DynamicTable
           tableTitle="Taxes"
           title="Add Tax"
@@ -90,7 +89,6 @@ const Taxes = () => {
           isLoading={isLoading}
           onEdit={handleEditItem}
         />
-      </div>
 
       <TaxForm
         isOpen={isAddEntityOpen}

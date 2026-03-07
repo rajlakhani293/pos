@@ -31,26 +31,27 @@ const SidebarHeader: React.FC<SidebarHeaderProps> = ({
       {(!isCollapsed || isMobileOpen) && (
         <Link href="/dashboard" className="flex items-center overflow-hidden whitespace-nowrap">
           <img
-            src="next.svg"
+            src="/next.svg"
             alt="Next"
             className="h-5 object-contain transition-all duration-300"
-            loading="lazy"
           />
         </Link>
       )}
 
       {(isCollapsed && !isMobileOpen) && (
-        <div className="relative h-10 w-10 flex items-center justify-center">
-         <RiNextjsFill className="size-8"/>
+        <div className="relative h-10 w-10 flex items-center justify-center group border rounded-lg cursor-e-resize bg-white">
+          <RiNextjsFill className="size-8 transition-opacity duration-200 group-hover:opacity-0 absolute pointer-events-none z-0" />
 
           <button
             type="button"
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation();
               setIsCollapsed(!isCollapsed);
             }}
-            className="flex p-2 h-10 w-10 rounded-lg items-center justify-center border cursor-w-resize"
-
-          ><LuPanelRight className="size-8" /></button>
+            className="flex p-2 h-10 w-10 rounded-lg border items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-white cursor-e-resize z-10"
+          >
+            <LuPanelRight className="size-8" />
+          </button>
         </div>
       )}
 

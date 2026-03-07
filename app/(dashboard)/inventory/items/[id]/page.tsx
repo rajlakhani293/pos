@@ -22,7 +22,7 @@ export default function ItemPage() {
   const params = useParams();
   const id = params.id as string;
   const isEdit = id !== 'create';
-  
+
   const [createItem] = items.useCreateItemMutation();
   const [editItem] = items.useEditItemMutation();
   const [getItemData] = items.useGetItemByIdMutation();
@@ -35,7 +35,7 @@ export default function ItemPage() {
   const [brands, setBrands] = useState<any[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(isEdit);
-  
+
   // State for managing add forms
   const [addFormOpen, setAddFormOpen] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<any>(null);
@@ -81,11 +81,11 @@ export default function ItemPage() {
   };
 
   const Schema: FormField[] = [
-    { 
-      name: "item_name", 
-      label: "Item Name", 
-      placeholder: "e.g. Premium Widget", 
-      required: true 
+    {
+      name: "item_name",
+      label: "Item Name",
+      placeholder: "e.g. Premium Widget",
+      required: true
     },
     {
       name: "category_id",
@@ -161,9 +161,9 @@ export default function ItemPage() {
       label: "Barcode",
       placeholder: "Enter barcode"
     },
-    { 
-      name: "description", 
-      label: "Description", 
+    {
+      name: "description",
+      label: "Description",
       type: "textarea",
       placeholder: "Enter a detailed description...",
       rows: 3
@@ -199,7 +199,7 @@ export default function ItemPage() {
 
   const handleChange = (name: string, value: any) => {
     setFormData((prev: any) => ({ ...prev, [name]: value }));
-    
+
     const error = validateField(name, value);
     setErrors((prev: any) => ({ ...prev, [name]: error }));
   };
@@ -207,7 +207,7 @@ export default function ItemPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     console.log("save");
-    
+
     e.preventDefault();
     setIsSubmitting(true);
 
@@ -223,7 +223,7 @@ export default function ItemPage() {
     if (Object.keys(newErrors).length === 0) {
       try {
         const formDataPayload = new FormData();
-        
+
         // Append regular form fields
         Object.entries(formData).forEach(([key, value]) => {
           if (['item_images_metadata', 'item_images_files', 'front_images', 'rear_images', 'other_images'].includes(key)) return;
@@ -242,13 +242,13 @@ export default function ItemPage() {
         });
 
         if (isEdit) {
-          const result:any = await editItem({ id, payLoad: formDataPayload }).unwrap();
+          const result: any = await editItem({ id, payLoad: formDataPayload }).unwrap();
           showToast.success(result?.message || "Item updated successfully");
         } else {
-          const result:any = await createItem(formDataPayload).unwrap();
+          const result: any = await createItem(formDataPayload).unwrap();
           showToast.success(result?.message || "Item created successfully");
         }
-        
+
         setIsSubmitting(false);
         router.push('/inventory/items');
         return;
@@ -283,7 +283,7 @@ export default function ItemPage() {
 
   const fetchCategoriesAndUnits = async (force: boolean = false) => {
     if (!force && categories.length > 0 && units.length > 0) return;
-    
+
     try {
       await Promise.all([
         fetchCategories(),
@@ -312,9 +312,9 @@ export default function ItemPage() {
       if (isEdit && id === lastFetchedIdRef.current) {
         return;
       }
-      
+
       await fetchCategoriesAndUnits();
-      
+
       if (!isMounted) {
         return;
       }
@@ -334,7 +334,7 @@ export default function ItemPage() {
       }
     };
     loadData();
-    
+
     return () => {
       isMounted = false;
     };
@@ -372,130 +372,68 @@ export default function ItemPage() {
   }
 
   return (
-    <div className="border-2 rounded-lg bg-white flex flex-col h-[calc(100vh-70px)] overflow-hidden">
-        {/* Form */}
-         <div className="px-6 py-2 border-b border-gray-200 bg-white z-20 flex-none">
-          <div className="flex items-center gap-4">
-            <button className="flex items-center text-sm text-gray-600 hover:text-gray-900 hover:cursor-pointer" onClick={() => router.push('/inventory/items')}>
-              <LeftIcon className="size-4" />
-            </button>
-            <h1 className="text-xl font-bold text-gray-900">{isEdit ? 'Edit Item' : 'Create Item'}</h1>
-          </div>
+    <div className=" bg-white flex flex-col h-full overflow-hidden">
+      {/* Form */}
+      <div className="px-4 py-2 border-b border-gray-200 bg-white z-10 flex-none">
+        <div className="flex items-center gap-3">
+          <button className="flex items-center text-sm text-gray-600 hover:text-gray-900 cursor-pointer border p-2 rounded-lg hover:bg-gray-50" onClick={() => router.push('/inventory/items')}>
+            <LeftIcon className="size-4" />
+          </button>
+          <h1 className="text-xl font-bold text-gray-900">{isEdit ? 'Edit Item' : 'Create Item'}</h1>
         </div>
-        <div ref={contentRef} className="px-6 pt-6 overflow-y-auto flex-1 custom-scrollbar">
-          <form onSubmit={handleSubmit} noValidate className="space-y-6">
-            {/* Multi-column Layout */}
-            <div className="flex flex-col lg:flex-row gap-4">
-              {/* Main Column - Left (60%) */}
-              <div className="w-full lg:w-[70%] space-y-6">
-                {/* Basic Details */}
-                <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Basic Details</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {Schema.filter(field => ['item_name', 'category_id', 'brand', 'barcode'].includes(field.name)).map((field) => (
-                      <div key={field.name}>
-                        {field.type === "select" ? (
-                         <UniFieldSelect
-                            label={field.label}
-                            value={formData[field.name] || ''}
-                            onValueChange={(value) => handleChange(field.name, value)}
-                            placeholder={field.placeholder || `Select ${field.label}`}
-                            required={field.required}
-                            error={errors[field.name]}
-                            onAddNew={field.onAddNew}
-                            addNewLabel={field.addNewLabel}
-                          >
-                           {field.options?.filter(option => option != null && option.value != null).map((option) => (
-                              <SelectItem key={option.value} value={option.value.toString()}>
-                                {option.label}
-                              </SelectItem>
-                            ))}
-                          </UniFieldSelect>
-                        ) : (
-                          <UniFieldInput
-                            label={field.label}
-                            type={field.type}
-                            placeholder={field.placeholder}
-                            value={formData[field.name] || ''}
-                            onChange={(e) => handleChange(field.name, e.target.value)}
-                            required={field.required}
-                            min={field.min}
-                            step={field.step}
-                            error={errors[field.name]}
-                          />
-                        )}
-                      </div>
-                    ))}
-                  </div>
+      </div>
+      <div ref={contentRef} className="px-6 pt-6 overflow-y-auto flex-1 custom-scrollbar">
+        <form onSubmit={handleSubmit} noValidate className="space-y-6">
+          {/* Multi-column Layout */}
+          <div className="flex flex-col lg:flex-row gap-4">
+            {/* Main Column - Left (60%) */}
+            <div className="w-full lg:w-[70%] space-y-6">
+              {/* Basic Details */}
+              <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Basic Details</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {Schema.filter(field => ['item_name', 'category_id', 'brand', 'barcode'].includes(field.name)).map((field) => (
+                    <div key={field.name}>
+                      {field.type === "select" ? (
+                        <UniFieldSelect
+                          label={field.label}
+                          value={formData[field.name] || ''}
+                          onValueChange={(value) => handleChange(field.name, value)}
+                          placeholder={field.placeholder || `Select ${field.label}`}
+                          required={field.required}
+                          error={errors[field.name]}
+                          onAddNew={field.onAddNew}
+                          addNewLabel={field.addNewLabel}
+                        >
+                          {field.options?.filter(option => option != null && option.value != null).map((option) => (
+                            <SelectItem key={option.value} value={option.value.toString()}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </UniFieldSelect>
+                      ) : (
+                        <UniFieldInput
+                          label={field.label}
+                          type={field.type}
+                          placeholder={field.placeholder}
+                          value={formData[field.name] || ''}
+                          onChange={(e) => handleChange(field.name, e.target.value)}
+                          required={field.required}
+                          min={field.min}
+                          step={field.step}
+                          error={errors[field.name]}
+                        />
+                      )}
+                    </div>
+                  ))}
                 </div>
+              </div>
 
-                {/* Pricing  */}
-                <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Pricing</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {Schema.filter(field => ['purchase_price', 'selling_price'].includes(field.name)).map((field) => (
-                      <div key={field.name}>
-                          <UniFieldInput
-                            label={field.label}
-                            type={field.type}
-                            placeholder={field.placeholder}
-                            value={formData[field.name] || ''}
-                            onChange={(e) => handleChange(field.name, e.target.value)}
-                            required={field.required}
-                            min={field.min}
-                            step={field.step}
-                            error={errors[field.name]}
-                          />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Inventory & Compliance */}
-                <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Inventory & Compliance</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {Schema.filter(field => ['opening_stock', 'primary_unit_id', 'min_stock_level', 'item_weight'].includes(field.name)).map((field) => (
-                      <div key={field.name}>
-                        {field.type === "select" ? (
-                          <UniFieldSelect
-                            label={field.label}
-                            value={formData[field.name] || ''}
-                            onValueChange={(value) => handleChange(field.name, value)}
-                            placeholder={field.placeholder || `Select ${field.label}`}
-                            required={field.required}
-                            error={errors[field.name]}
-                            onAddNew={field.onAddNew}
-                            addNewLabel={field.addNewLabel}
-                          >
-                            {field.options?.filter(option => option != null && option.value != null).map((option) => (
-                              <SelectItem key={option.value} value={option.value.toString()}>
-                                {option.label}
-                              </SelectItem>
-                            ))}
-                          </UniFieldSelect>
-                        ) : (
-                          <UniFieldInput
-                            label={field.label}
-                            type={field.type}
-                            placeholder={field.placeholder}
-                            value={formData[field.name] || ''}
-                            onChange={(e) => handleChange(field.name, e.target.value)}
-                            required={field.required}
-                            min={field.min}
-                            step={field.step}
-                            error={errors[field.name]}
-                          />
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Description */}
-                <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Description</h3>
-                  {Schema.filter(field => field.name === 'description').map((field) => (
+              {/* Pricing  */}
+              <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Pricing</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {Schema.filter(field => ['purchase_price', 'selling_price'].includes(field.name)).map((field) => (
                     <div key={field.name}>
                       <UniFieldInput
                         label={field.label}
@@ -506,8 +444,6 @@ export default function ItemPage() {
                         required={field.required}
                         min={field.min}
                         step={field.step}
-                        as="textarea"
-                        rows={4}
                         error={errors[field.name]}
                       />
                     </div>
@@ -515,90 +451,154 @@ export default function ItemPage() {
                 </div>
               </div>
 
-              {/* Sidebar - Right (40%) */}
-              <div className="w-full lg:w-[30%] space-y-6">
-                {/* Images */}
-                <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                  <MultipleImageUpload
-                    key={id}
-                    initialImages={formData.item_images_metadata || []}
-                    onFrontImagesChange={(files: File[]) => handleChange('front_images', files)}
-                    onRearImagesChange={(files: File[]) => handleChange('rear_images', files)}
-                    onOtherImagesChange={(files: File[]) => handleChange('other_images', files)}
-                    onImagesUpdate={(data: any) => {
-                      setFormData((prev: any) => ({
-                        ...prev,
-                        item_images_metadata: data.item_images,
-                        item_images_files: data.files
-                      }));
-                    }}
-                    frontError={errors.front_images}
-                    rearError={errors.rear_images}
-                    otherError={errors.other_images}
-                  />
+              {/* Inventory & Compliance */}
+              <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Inventory & Compliance</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {Schema.filter(field => ['opening_stock', 'primary_unit_id', 'min_stock_level', 'item_weight'].includes(field.name)).map((field) => (
+                    <div key={field.name}>
+                      {field.type === "select" ? (
+                        <UniFieldSelect
+                          label={field.label}
+                          value={formData[field.name] || ''}
+                          onValueChange={(value) => handleChange(field.name, value)}
+                          placeholder={field.placeholder || `Select ${field.label}`}
+                          required={field.required}
+                          error={errors[field.name]}
+                          onAddNew={field.onAddNew}
+                          addNewLabel={field.addNewLabel}
+                        >
+                          {field.options?.filter(option => option != null && option.value != null).map((option) => (
+                            <SelectItem key={option.value} value={option.value.toString()}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </UniFieldSelect>
+                      ) : (
+                        <UniFieldInput
+                          label={field.label}
+                          type={field.type}
+                          placeholder={field.placeholder}
+                          value={formData[field.name] || ''}
+                          onChange={(e) => handleChange(field.name, e.target.value)}
+                          required={field.required}
+                          min={field.min}
+                          step={field.step}
+                          error={errors[field.name]}
+                        />
+                      )}
+                    </div>
+                  ))}
                 </div>
+              </div>
 
-                
+              {/* Description */}
+              <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Description</h3>
+                {Schema.filter(field => field.name === 'description').map((field) => (
+                  <div key={field.name}>
+                    <UniFieldInput
+                      label={field.label}
+                      type={field.type}
+                      placeholder={field.placeholder}
+                      value={formData[field.name] || ''}
+                      onChange={(e) => handleChange(field.name, e.target.value)}
+                      required={field.required}
+                      min={field.min}
+                      step={field.step}
+                      as="textarea"
+                      rows={4}
+                      error={errors[field.name]}
+                    />
+                  </div>
+                ))}
               </div>
             </div>
 
-            <div ref={paginationSentinelRef} className="h-px w-full" />
-
-            {/* Form Actions */}
-            <footer className={`mt-4 sticky z-50 transition-all duration-300 ease-in-out ${isFooterStuck ? "mx-6 bottom-5" : "mx-0 bottom-0"}`}>
-              <div className={`flex items-center justify-end gap-x-2 rounded-b-xl p-3 bg-white/90 backdrop-blur-md transition-shadow duration-200 ${isFooterStuck ? "rounded-t-xl shadow-lg border border-gray-200/80" : "rounded-t-none shadow-none border-t-2 border-gray-100"}`}>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => router.push('/inventory/items')} 
-                  disabled={isSubmitting}
-                  className="rounded-lg border px-4 py-1.5"
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  type="submit" 
-                  disabled={isSubmitting} 
-                  className="min-w-[120px] rounded-lg px-4 py-1.5 bg-black text-white"
-                >
-                  {isSubmitting ? (
-                    <span className="flex items-center gap-2">
-                      <Spinner />
-                      Saving...
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-2">
-                      {isEdit ? 'Update Item' : 'Save Item'}
-                    </span>
-                  )}
-                </Button>
+            {/* Sidebar - Right (40%) */}
+            <div className="w-full lg:w-[30%] space-y-6">
+              {/* Images */}
+              <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                <MultipleImageUpload
+                  key={id}
+                  initialImages={formData.item_images_metadata || []}
+                  onFrontImagesChange={(files: File[]) => handleChange('front_images', files)}
+                  onRearImagesChange={(files: File[]) => handleChange('rear_images', files)}
+                  onOtherImagesChange={(files: File[]) => handleChange('other_images', files)}
+                  onImagesUpdate={(data: any) => {
+                    setFormData((prev: any) => ({
+                      ...prev,
+                      item_images_metadata: data.item_images,
+                      item_images_files: data.files
+                    }));
+                  }}
+                  frontError={errors.front_images}
+                  rearError={errors.rear_images}
+                  otherError={errors.other_images}
+                />
               </div>
-            </footer>
-          </form>
-        </div>
-        
-        {/* Add Forms */}
-         <CategoryForm
-           isOpen={addFormOpen === 'category'}
-           onClose={handleCloseAddForm}
-           onSuccess={() => { handleCloseAddForm(); fetchCategories(); }}
-           id={selectedId?.id}
-           title={selectedId ? `Edit Item Category` : `Add Item Category`}
-         />
-         <UnitForm
-           isOpen={addFormOpen === 'unit'}
-           onClose={handleCloseAddForm}
-           onSuccess={() => { handleCloseAddForm(); fetchUnits(); }}
-           id={selectedId?.id}
-           title={selectedId ? `Edit Item Unit` : `Add Item Unit`}
-         />
-         <BrandForm
-           isOpen={addFormOpen === 'brand'}
-           onClose={handleCloseAddForm}
-           onSuccess={() => { handleCloseAddForm(); fetchBrands(); }}
-           id={selectedId?.id}
-           title={selectedId ? `Edit Brand` : `Add Brand`}
-         />
+
+
+            </div>
+          </div>
+
+          <div ref={paginationSentinelRef} className="h-px w-full" />
+
+          {/* Form Actions */}
+          <footer className={`mt-4 sticky z-10 transition-all duration-300 ease-in-out ${isFooterStuck ? "mx-6 bottom-5" : "mx-0 bottom-0"}`}>
+            <div className={`flex items-center justify-end gap-x-2 rounded-b-xl p-3 bg-white/90 backdrop-blur-md transition-shadow duration-200 ${isFooterStuck ? "rounded-t-xl shadow-lg border border-gray-200/80" : "rounded-t-none shadow-none border-t-2 border-gray-100"}`}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.push('/inventory/items')}
+                disabled={isSubmitting}
+                className="rounded-lg border px-4 py-1.5"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="min-w-[120px] rounded-lg px-4 py-1.5 bg-black text-white"
+              >
+                {isSubmitting ? (
+                  <span className="flex items-center gap-2">
+                    <Spinner />
+                    Saving...
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-2">
+                    {isEdit ? 'Update Item' : 'Save Item'}
+                  </span>
+                )}
+              </Button>
+            </div>
+          </footer>
+        </form>
+      </div>
+
+      {/* Add Forms */}
+      <CategoryForm
+        isOpen={addFormOpen === 'category'}
+        onClose={handleCloseAddForm}
+        onSuccess={() => { handleCloseAddForm(); fetchCategories(); }}
+        id={selectedId?.id}
+        title={selectedId ? `Edit Item Category` : `Add Item Category`}
+      />
+      <UnitForm
+        isOpen={addFormOpen === 'unit'}
+        onClose={handleCloseAddForm}
+        onSuccess={() => { handleCloseAddForm(); fetchUnits(); }}
+        id={selectedId?.id}
+        title={selectedId ? `Edit Item Unit` : `Add Item Unit`}
+      />
+      <BrandForm
+        isOpen={addFormOpen === 'brand'}
+        onClose={handleCloseAddForm}
+        onSuccess={() => { handleCloseAddForm(); fetchBrands(); }}
+        id={selectedId?.id}
+        title={selectedId ? `Edit Brand` : `Add Brand`}
+      />
     </div>
   );
 }

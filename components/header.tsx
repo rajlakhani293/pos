@@ -1,7 +1,7 @@
 "use client"
 
 import { useId, useEffect, useRef } from "react";
-import { Search, Bell, Settings, LogOut, User, Key, Building2 } from "lucide-react";
+import { Search, Bell, Settings, LogOut, User, Key, Building2, Menu } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
@@ -17,11 +17,13 @@ import { auth } from "@/lib/api/auth";
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
 import { showToast } from "@/lib/toast";
+import { useSidebar } from "@/components/ui/sidebar-context";
 
 export function Header() {
   const triggerId = useId();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const { user, shop } = useSession();
+  const { setIsMobileOpen } = useSidebar();
   
   const [logout] = auth.useLogoutMutation();
   const router = useRouter();
@@ -56,8 +58,15 @@ export function Header() {
   const initials = user?.user_name ? user.user_name.split(' ').map(n => n[0]).join('').toUpperCase() : "U";
 
   return (
-    <header className="h-16 border-b bg-white flex items-center justify-between px-6 w-full sticky top-0 z-50">
+    <header className="h-16 border-b bg-white flex items-center justify-between px-6 w-full sticky top-0 z-10">
       <div className="flex items-center gap-4 flex-1">
+        <button
+          onClick={() => setIsMobileOpen(true)}
+          className="lg:hidden p-2 rounded-md border hover:bg-gray-100 cursor-pointer text-gray-500"
+          aria-label="Open sidebar"
+        >
+          <Menu className="h-6 w-6" />
+        </button>
         <div className="relative w-full sm:max-w-xs">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input

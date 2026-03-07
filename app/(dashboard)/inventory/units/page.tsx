@@ -59,7 +59,6 @@ const Units = () => {
 
   return (
     <>
-      <div className="p-4">
         <DynamicTable
           tableTitle="Item Units"
           title="Add Item Unit"
@@ -83,7 +82,6 @@ const Units = () => {
           isLoading={isLoading}
           onEdit={handleEditItem}
         />
-      </div>
 
       <UnitForm
         isOpen={isAddEntityOpen}

@@ -62,7 +62,6 @@ const Brands = () => {
 
   return (
     <>
-      <div className="p-4">
         <DynamicTable
           tableTitle="Brands"
           title="Add Brand"
@@ -86,7 +85,6 @@ const Brands = () => {
           isLoading={isLoading}
           onEdit={handleEditItem}
         />
-      </div>
 
       <BrandForm
         isOpen={isAddEntityOpen}

@@ -66,7 +66,6 @@ const Items = () => {
   );
 
   return (
-    <div className="p-4">
       <DynamicTable
         tableTitle="Items"
         title="Add Item"
@@ -90,7 +89,6 @@ const Items = () => {
         isLoading={isLoading}
         onEdit={handleEditItem}
       />
-    </div>
   );
 };
 

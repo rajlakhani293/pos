@@ -90,7 +90,6 @@ const Parties = () => {
 
   return (
     <>
-      <div className="p-4">
         <DynamicTable
           tableTitle="Parties"
           title="Add Party"
@@ -114,7 +113,6 @@ const Parties = () => {
           isLoading={isLoading}
           onEdit={handleEditItem}
         />
-      </div>
 
       <PartyForm
         isOpen={isAddEntityOpen}

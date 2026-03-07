@@ -89,13 +89,13 @@ export const SidebarContainer: React.FC<SidebarContainerProps> = ({
         <>
             {/* Mobile Overlay */}
             {isMobileOpen && (
-                <div className="fixed inset-0 bg-black/50 lg:hidden" onClick={closeMobile} />
+                <div className="fixed inset-0 bg-black/50 lg:hidden z-40" onClick={closeMobile} />
             )}
 
             <aside
                 ref={sidebarRef}
                 className={twMerge(
-                    `fixed left-2 top-2 bottom-2 border border-gray-200 flex flex-col rounded-2xl bg-white transition-all duration-300 ease-in-out shadow-sm h-full lg:relative lg:left-0 lg:top-0 lg:bottom-0`,
+                    `fixed left-2 top-2 bottom-2 border border-gray-200 flex flex-col rounded-2xl bg-white transition-all duration-300 ease-in-out shadow-sm h-full lg:relative lg:left-0 lg:top-0 lg:bottom-0 z-50`,
                     // default width for mobile
                     "w-[264px]",
                     // mobile slide-in / slide-out
@@ -107,7 +107,7 @@ export const SidebarContainer: React.FC<SidebarContainerProps> = ({
             >
                 {/* Unified Sidebar Content */}
                 <div
-                    className={"flex-1 flex flex-col no-scrollbar overflow-y-auto overflow-x-hidden"}
+                    className={"flex-1 flex flex-col no-scrollbar overflow-y-auto overflow-x-hidden rounded-2xl"}
                 >
                     {header && (
                         <div className="shrink-0 transition-all duration-300 overflow-hidden rounded-t-2xl sticky top-0 z-10 bg-white">
@@ -146,7 +146,7 @@ export const SidebarContainer: React.FC<SidebarContainerProps> = ({
                         </div>
                     )}
 
-                    <div className="flex-1 p-2">
+                    <div className="flex-1 p-2 bg-white">
                         <ul className="flex flex-col">{children}</ul>
                     </div>
                 </div>
@@ -179,18 +179,18 @@ export const NavItem: React.FC<NavItemProps> = ({
                             onClick={handleClick}
                             aria-label={label}
                             className={twMerge(
-                                `flex w-full items-center rounded-md px-3 py-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors duration-200`,
+                                `flex w-full items-center p-2 rounded-md hover:bg-blue-50 font-bold transition-colors duration-200`,
                                 "gap-3",
                                 isCollapsed && !isMobileOpen ? "justify-center" : "",
-                                isActive ? "bg-gray-100 text-gray-900 font-semibold" : ""
+                                isActive ? "bg-blue-100 text-gray-900 font-extrabold" : ""
                             )}
                         >
-                            <span className="shrink-0">{icon}</span>
+                            <span className="">{icon}</span>
                             {(!isCollapsed || isMobileOpen) && (
                                 <span className={twMerge(
                                     "overflow-hidden whitespace-nowrap transition-all duration-300 text-sm font-medium",
-                                    "w-auto opacity-100",
-                                    isCollapsed ? "lg:w-0 lg:opacity-0" : "w-auto opacity-100"
+                                    "w-auto",
+                                    isCollapsed ? "lg:w-0" : "w-auto"
                                 )}>
                                     {label}
                                 </span>
@@ -207,18 +207,18 @@ export const NavItem: React.FC<NavItemProps> = ({
                     onClick={handleClick}
                     aria-label={label}
                     className={twMerge(
-                        `flex w-full items-center rounded-md px-3 py-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors duration-200`,
+                        `flex w-full items-center rounded-md px-3 py-2 font-bold hover:bg-blue-50 transition-colors duration-200`,
                         "gap-3",
                         isCollapsed && !isMobileOpen ? "justify-center" : "",
-                        isActive ? "bg-gray-100 text-gray-900 font-semibold" : ""
+                        isActive ? "bg-blue-100 text-gray-900 font-semibold" : ""
                     )}
                 >
                     <span className="shrink-0">{icon}</span>
                     {(!isCollapsed || isMobileOpen) && (
                         <span className={twMerge(
                             "overflow-hidden whitespace-nowrap transition-all duration-300 text-sm font-medium",
-                            "w-auto opacity-100",
-                            isCollapsed ? "lg:w-0 lg:opacity-0" : "w-auto opacity-100"
+                            "w-auto",
+                            isCollapsed ? "lg:w-0" : "w-auto"
                         )}>
                             {label}
                         </span>
@@ -381,12 +381,12 @@ export const SidebarDropdown: React.FC<SidebarDropdownProps> = ({
                             onClick={handleToggle}
                             aria-label={label}
                             className={twMerge(
-                                `flex w-full items-center rounded-md px-3 py-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors duration-200`,
+                                `flex w-full items-center rounded-md p-2 hover:bg-blue-50 font-bold transition-colors duration-200 cursor-pointer`,
                                 // Mobile: Always spread apart
                                 "justify-between gap-3",
                                 isCollapsed && !isMobileOpen ? "justify-center" : "",
-                                isActiveTooltip ? "bg-gray-50 text-gray-900" : "",
-                                isActive ? "bg-gray-100 text-gray-900 font-semibold" : ""
+                                isActiveTooltip ? "bg-blue-50 text-gray-900" : "",
+                                isActive ? "bg-blue-100 text-gray-900 font-semibold" : ""
                             )}
                         >
                             <div className={twMerge("flex items-center", icon ? "gap-3" : "")}>
@@ -405,7 +405,7 @@ export const SidebarDropdown: React.FC<SidebarDropdownProps> = ({
                             <div className={twMerge(
                                 "transition-transform duration-300 ease-in-out",
                                 isOpen ? "rotate-180" : "",
-                                isCollapsed ? "hidden" : "block"
+                                (isCollapsed && !isMobileOpen) ? "hidden" : "block"
                             )}>
                                 <BiChevronDown style={{ fontSize: 16}} />
                             </div>
@@ -420,12 +420,12 @@ export const SidebarDropdown: React.FC<SidebarDropdownProps> = ({
                     onClick={handleToggle}
                     aria-label={label}
                     className={twMerge(
-                        `flex w-full items-center rounded-md px-3 py-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors duration-200`,
+                        `flex w-full items-center rounded-md px-3 py-2 font-bold hover:bg-blue-50 transition-colors duration-200 cursor-pointer text-gray-900`,
                         // Mobile: Always spread apart
                         "justify-between gap-3",
                         isCollapsed && !isMobileOpen ? "justify-center" : "",
-                        isActiveTooltip ? "bg-gray-50 text-gray-900" : "",
-                        isActive ? "bg-gray-100 text-gray-900 font-semibold" : ""
+                        isActiveTooltip ? "bg-blue-50 text-gray-900" : "",
+                        isActive ? "bg-blue-100 text-gray-900 font-semibold" : ""
                     )}
                 >
                     <div className={twMerge("flex items-center", icon ? "gap-3" : "")}>
@@ -444,7 +444,7 @@ export const SidebarDropdown: React.FC<SidebarDropdownProps> = ({
                     <div className={twMerge(
                         "transition-transform duration-300 ease-in-out",
                         isOpen ? "rotate-180" : "",
-                        isCollapsed ? "hidden" : "block"
+                        (isCollapsed && !isMobileOpen) ? "hidden" : "block"
                     )}>
                         <BiChevronDown style={{ fontSize: 16}} />
                     </div>
@@ -484,11 +484,11 @@ export const SidebarDropdownItem: React.FC<SidebarDropdownItemProps> = ({
                 href={href}
                 onClick={onClick}
                 className={twMerge(
-                    `flex items-center rounded-md px-3 py-2 text-sm transition-colors`,
+                    `flex items-center rounded-md p-2 text-sm transition-colors cursor-pointer font-medium text-gray-900`,
                     icon ? "gap-3" : "",
                     isActive
-                        ? "bg-blue-100 text-blue-900 font-medium"
-                        : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                        ? "bg-blue-100"
+                        : "hover:bg-blue-100"
                 )}
             >
                 {icon && <span className="shrink-0">{icon}</span>}

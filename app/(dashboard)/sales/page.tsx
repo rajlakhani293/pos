@@ -8,6 +8,15 @@ import { useRouter } from "next/navigation";
 
 const Sales = () => {
   const router = useRouter();
+  
+  // Payment mode choices mapping
+  const PAYMENT_MODE_CHOICES = [
+    { value: 1, label: 'Cash' },
+    { value: 2, label: 'UPI' },
+    { value: 3, label: 'Partial' },
+    { value: 4, label: 'Bank Transfer' },
+  ];
+
   const {
     orders,
     totalItems,
@@ -29,10 +38,6 @@ const Sales = () => {
 
   const handleCreateSale = () => {
     router.push('/sales/create');
-  };
-
-  const handleEditSale = (item: any) => {
-    router.push(`/sales/${item.id}`);
   };
 
   const columns = useMemo(
@@ -60,13 +65,16 @@ const Sales = () => {
       {
         key: "payment_mode",
         title: "Payment Mode",
+        render: (value: any) => {
+          const paymentMode = PAYMENT_MODE_CHOICES.find(mode => mode.value === value);
+          return paymentMode ? paymentMode.label : value;
+        }
       }
     ],
-    [currentPage, itemsPerPage]
+    [currentPage, itemsPerPage, PAYMENT_MODE_CHOICES]
   );
 
   return (
-    <div className="p-4">
       <DynamicTable
         tableTitle="Sales"
         title="Add Sale"
@@ -88,9 +96,7 @@ const Sales = () => {
         onPageChange={setCurrentPage}
         showDelete={true}
         isLoading={isLoading}
-        onEdit={handleEditSale}
       />
-    </div>
   );
 };
 

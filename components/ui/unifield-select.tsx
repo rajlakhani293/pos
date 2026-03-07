@@ -25,6 +25,7 @@ interface UniFieldSelectProps {
   validationError?: string
   onAddNew?: () => void
   addNewLabel?: string
+  size?: "sm" | "default" | "lg"
 }
 
 export const UniFieldSelect = ({
@@ -38,7 +39,8 @@ export const UniFieldSelect = ({
   children,
   validationError,
   onAddNew,
-  addNewLabel
+  addNewLabel,
+  size = "default"
 }: UniFieldSelectProps) => {
     const handleValueChange = (val: string) => {
       if (val === "add_new" && onAddNew) {
@@ -49,10 +51,10 @@ export const UniFieldSelect = ({
     }
 
     return (
-     <Field data-invalid={error ? true : undefined} className={cn("w-full gap-1", containerClassName)}>
+     <Field data-invalid={error ? true : undefined} className={cn("w-full gap-1 bg-white", containerClassName)}>
       {label && <FieldLabel>{label} {required && <span className="text-red-500">*</span>}</FieldLabel>}
       <Select value={value} onValueChange={handleValueChange}>
-        <SelectTrigger aria-invalid={error ? true : undefined}>
+        <SelectTrigger aria-invalid={error ? true : undefined} size={size}>
           <SelectValue placeholder={placeholder || "Select an option"} />
         </SelectTrigger>
         <SelectContent>

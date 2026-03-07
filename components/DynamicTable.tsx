@@ -626,7 +626,7 @@ const DynamicTable = ({
       <div className="w-full overflow-hidden border rounded-lg">
         <div className={`relative ${data?.length > 0 ? "max-h-[calc(100vh-300px)] overflow-y-auto" : "h-[calc(100vh-300px)]"}`}>
           <Table className={cn(data?.length === 0 && "h-full")}>
-            <TableHeader className="sticky top-0 z-10 bg-muted/90 backdrop-blur-sm rounded-t-3xl">
+            <TableHeader className="sticky top-0 bg-muted/90 backdrop-blur-sm rounded-t-3xl">
               <TableRow className="hover:bg-muted/90 border-b">
                 <TableHead className="w-16 text-center">
                   <div className="flex flex-col py-2">
@@ -818,7 +818,7 @@ const DynamicTable = ({
       {totalItems > 20 && (
       <div
         className={cn(
-          "sticky bottom-4 z-50 transition-all duration-300",
+          "sticky bottom-4 transition-all duration-300",
           isFooterStuck && "px-6"
         )}
       >
