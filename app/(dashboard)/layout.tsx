@@ -2,13 +2,12 @@
 
 import { Header } from "@/components/header";
 import React, { useState, useEffect } from "react";
-import { SidebarProvider } from "@/components/ui/sidebar-context";
 import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils";
 import { AppSidebar, navData } from "@/components/app-sidebar";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Spinner } from "@/components/ui/spinner";
-import { ModuleTabs, ModuleTab } from "@/components/ui/module-tabs";
+import { ModuleTabs } from "@/components/ui/module-tabs";
 
 export default function DashboardLayout({
   children,
@@ -17,44 +16,17 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const isSettingsPage = pathname?.startsWith("/settings");
-  
-  // Check if URL ends with "create" or a number (for edit pages)
-  const shouldHideModuleTabs = pathname?.endsWith("/create") || 
-    /\d+$/.test(pathname || "") || // Ends with a number
-    pathname?.match(/\/\d+\/(edit|update)/); // Contains number followed by edit/update
-  
-  const getCurrentModuleTabs = (): ModuleTab[] => {
-    const activeNavItem = navData.find(item => {
-      if (item.children && item.children.length > 0) {
-        return item.children.some(child => pathname.startsWith(child.href));
-      }
-      return pathname.startsWith(item.href || '');
-    });
 
-    if (activeNavItem?.children && activeNavItem.children.length > 1) {
-      return activeNavItem.children.map(child => ({
-        label: child.label,
-        href: child.href
-      }));
-    }
-
-    return [];
-  };
-  
-  // Pages that should not have padding
   const noPaddingPages = {
     "/sales/create": pathname?.startsWith("/sales/create"),
     "/inventory/items/create": pathname?.startsWith("/inventory/items/create"),
     "/inventory/items/": pathname?.startsWith("/inventory/items/") && /\d+$/.test(pathname || ""),
+    isSettingsPage,
   };
-  
+
   const shouldHaveNoPadding = Object.values(noPaddingPages).some(Boolean);
-  
-  if (isSettingsPage) {
-    return <>{children}</>;
-  }
-  
-  const [isOffline, setIsOffline] = useState(!navigator.onLine);
+
+  const [isOffline, setIsOffline] = useState(typeof navigator !== 'undefined' ? !navigator.onLine : false);
 
   useEffect(() => {
     const handleOnline = () => setIsOffline(false);
@@ -69,28 +41,47 @@ export default function DashboardLayout({
     };
   }, []);
 
-  return (
-    <SidebarProvider>
-      <div className="flex h-screen w-full overflow-hidden p-2 gap-1 bg-gray-50">
+  const getModuleTabs = (pathname: string) => {
+    // Hide tabs if URL ends with "create" or a number
+    const urlParts = pathname.split('/');
+    const lastPart = urlParts[urlParts.length - 1];
+    if (lastPart === 'create' || /^\d+$/.test(lastPart)) {
+      return [];
+    }
 
+    const currentModule = navData.find(item => {
+      if (item.items) {
+        return item.items.some(subItem => pathname.startsWith(subItem.url));
+      }
+      return pathname.startsWith(item.url);
+    });
+
+    if (currentModule?.items) {
+      return currentModule.items.map(item => ({
+        label: item.title,
+        href: item.url
+      }));
+    }
+
+    return [];
+  };
+
+  return (
+    <>
+      <div className="flex h-screen w-full overflow-hidden">
         <aside className="h-full shrink-0">
-          <AppSidebar />
+          <SidebarProvider>
+            <AppSidebar />
+          </SidebarProvider>
         </aside>
 
-        <div className="flex flex-col flex-1 min-w-0 rounded-2xl bg-white border border-gray-200 overflow-hidden">
+        <div className="flex flex-col flex-1 min-w-0">
           <Header />
-          {!shouldHideModuleTabs && (
-            <ModuleTabs
-              tabs={getCurrentModuleTabs()}
-              activeHref={pathname}
-            />
-          )}
-          <main
-            className={cn(
-              "flex-1 overflow-y-auto shadow-md bg-white",
-              !shouldHaveNoPadding && "p-4 lg:p-6",
-            )}
-          >
+          <ModuleTabs
+            tabs={getModuleTabs(pathname)}
+            activeHref={pathname}
+          />
+          <main className={`flex-1 overflow-y-auto bg-white ${shouldHaveNoPadding ? "" : "p-4"}`}>
             {children}
           </main>
         </div>
@@ -110,7 +101,7 @@ export default function DashboardLayout({
                 </p>
               </div>
 
-               <div className="relative flex items-center justify-center">
+              <div className="relative flex items-center justify-center">
                 <div className="absolute inset-0 rounded-full border-4 border-gray-100" />
                 <Spinner className="size-12 text-slate-800 animate-spin-slow" />
               </div>
@@ -131,6 +122,6 @@ export default function DashboardLayout({
           </div>
         </DialogContent>
       </Dialog>
-    </SidebarProvider>
+    </>
   );
 }

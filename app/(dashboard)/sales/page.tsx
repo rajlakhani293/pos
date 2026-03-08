@@ -40,6 +40,10 @@ const Sales = () => {
     router.push('/sales/create');
   };
 
+  const handleEditSale = (sale: any) => {
+    router.push(`/sales/${sale.id}`);
+  };
+
   const columns = useMemo(
     () => [
       {
@@ -94,8 +98,9 @@ const Sales = () => {
         itemsPerPage={itemsPerPage}
         totalItems={totalItems}
         onPageChange={setCurrentPage}
-        showDelete={true}
+        showDelete={false}
         isLoading={isLoading}
+        onEdit={handleEditSale}
       />
   );
 };

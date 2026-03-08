@@ -1,521 +1,719 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { twMerge } from "tailwind-merge";
-import { BiChevronDown } from "react-icons/bi";
-import { IoMdClose } from "react-icons/io";
-import { IoMenu } from "react-icons/io5";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import * as React from "react"
+import { cva, type VariantProps } from "class-variance-authority"
+import { PanelLeftIcon } from "lucide-react"
+import { Slot } from "radix-ui"
+import { useIsMobile } from "@/hooks/use-mobile"
+import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Separator } from "@/components/ui/separator"
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet"
+import { Skeleton } from "@/components/ui/skeleton"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
-export type SidebarItemData = {
-    label: string;
-    href?: string;
-    icon?: React.ReactNode;
-    children?: SidebarItemData[];
-};
+const SIDEBAR_COOKIE_NAME = "sidebar_state"
+const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
+const SIDEBAR_WIDTH = "16rem"
+const SIDEBAR_WIDTH_MOBILE = "18rem"
+const SIDEBAR_WIDTH_ICON = "4rem"
+const SIDEBAR_KEYBOARD_SHORTCUT = "b"
 
-type NavItemProps = {
-    icon?: React.ReactNode;
-    label: string;
-    href?: string;
-    isCollapsed: boolean;
-    isMobileOpen: boolean;
-    activeTooltip: string | null;
-    setActiveTooltip: (v: string | null) => void;
-    onLinkClick?: () => void;
-    isActive?: boolean;
-    showCollapsedTooltip?: boolean;
-};
-
-type SidebarDropdownProps = {
-    icon?: React.ReactNode;
-    label: string;
-    children?: React.ReactNode;
-    firstChildHref?: string;
-    isCollapsed: boolean;
-    isMobileOpen: boolean;
-    activeTooltip: string | null;
-    setActiveTooltip: (v: string | null) => void;
-    isOpen: boolean;
-    onToggle: () => void;
-    isActive?: boolean;
-};
-
-interface SidebarDropdownItemProps {
-    href: string;
-    icon?: React.ReactNode;
-    label: string;
-    isActive?: boolean;
-    onClick?: () => void;
+type SidebarContextProps = {
+  state: "expanded" | "collapsed"
+  open: boolean
+  setOpen: (open: boolean) => void
+  openMobile: boolean
+  setOpenMobile: (open: boolean) => void
+  isMobile: boolean
+  toggleSidebar: () => void
 }
 
-interface SidebarSectionTitleProps {
-    label: string;
-    isCollapsed: boolean;
+const SidebarContext = React.createContext<SidebarContextProps | null>(null)
+
+function useSidebar() {
+  const context = React.useContext(SidebarContext)
+  if (!context) {
+    throw new Error("useSidebar must be used within a SidebarProvider.")
+  }
+
+  return context
 }
 
-interface SidebarContainerProps {
-    isCollapsed: boolean;
-    isMobileOpen: boolean;
-    isResizing: boolean;
-    sidebarRef: React.RefObject<HTMLDivElement | null>;
-    
-    // Content props
-    title?: string;
-    logo?: React.ReactNode;
-    children: React.ReactNode;
-    header?: React.ReactNode;
+function SidebarProvider({
+  defaultOpen = false,
+  open: openProp,
+  onOpenChange: setOpenProp,
+  className,
+  style,
+  children,
+  ...props
+}: React.ComponentProps<"div"> & {
+  defaultOpen?: boolean
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+}) {
+  const isMobile = useIsMobile()
+  const [openMobile, setOpenMobile] = React.useState(false)
 
-    // callbacks
-    toggleSidebar: () => void;
-    closeMobile: () => void;
-}
+  const [_open, _setOpen] = React.useState(defaultOpen)
+  const open = openProp ?? _open
+  const setOpen = React.useCallback(
+    (value: boolean | ((value: boolean) => boolean)) => {
+      const openState = typeof value === "function" ? value(open) : value
+      if (setOpenProp) {
+        setOpenProp(openState)
+      } else {
+        _setOpen(openState)
+      }
 
-export const SidebarContainer: React.FC<SidebarContainerProps> = ({
-    isCollapsed,
-    isMobileOpen,
-    isResizing,
-    sidebarRef,
-    title,
-    logo,
-    children,
-    header,
-    toggleSidebar,
-    closeMobile,
-}) => {
-    return (
-        <>
-            {/* Mobile Overlay */}
-            {isMobileOpen && (
-                <div className="fixed inset-0 bg-black/50 lg:hidden z-40" onClick={closeMobile} />
-            )}
+      document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`
+    },
+    [setOpenProp, open]
+  )
 
-            <aside
-                ref={sidebarRef}
-                className={twMerge(
-                    `fixed left-2 top-2 bottom-2 border border-gray-200 flex flex-col rounded-2xl bg-white transition-all duration-300 ease-in-out shadow-sm h-full lg:relative lg:left-0 lg:top-0 lg:bottom-0 z-50`,
-                    // default width for mobile
-                    "w-[264px]",
-                    // mobile slide-in / slide-out
-                    isMobileOpen ? "translate-x-0 left-2 top-2 bottom-2 rounded-2xl shadow-xl h-auto" : "-translate-x-[calc(100%+8px)]",
-                    "lg:translate-x-0 lg:shadow-[0_8px_30px_rgb(0,0,0,0.06)]",
-                    // desktop widths
-                    isCollapsed ? "lg:w-[72px]" : "lg:w-[264px]"
-                )}
-            >
-                {/* Unified Sidebar Content */}
-                <div
-                    className={"flex-1 flex flex-col no-scrollbar overflow-y-auto overflow-x-hidden rounded-2xl"}
-                >
-                    {header && (
-                        <div className="shrink-0 transition-all duration-300 overflow-hidden rounded-t-2xl sticky top-0 z-10 bg-white">
-                            {header}
-                        </div>
-                    )}
-                    
-                    {!header && (
-                        <div
-                            className={twMerge(
-                                "flex items-center justify-between p-4 h-16 shrink-0 sticky top-0 z-10 bg-white",
-                                isCollapsed && !isResizing ? "lg:justify-center" : ""
-                            )}
-                        >
-                            <div
-                                className={twMerge(
-                                    "flex items-center gap-2 overflow-hidden whitespace-nowrap transition-all duration-300",
-                                    isCollapsed ? "lg:w-0 lg:opacity-0" : "w-auto opacity-100"
-                                )}
-                            >
-                                {logo && <div className="shrink-0">{logo}</div>}
-                                {title && <h3 className="text-xl font-bold text-gray-800">{title}</h3>}
-                            </div>
-                            <button
-                                onClick={toggleSidebar}
-                                className="hidden lg:flex btn btn-circle btn-ghost items-center justify-center p-2 rounded-full hover:bg-gray-100 text-gray-500 hover:text-gray-800 transition-colors"
-                            >
-                                <IoMenu size={20} />
-                            </button>
-                            <button
-                                onClick={closeMobile}
-                                className="lg:hidden btn btn-circle btn-ghost flex items-center justify-center p-2 rounded-full hover:bg-gray-100 text-gray-500 hover:text-gray-800 transition-colors"
-                            >
-                                <IoMdClose size={20} />
-                            </button>
-                        </div>
-                    )}
+  const toggleSidebar = React.useCallback(() => {
+    return isMobile ? setOpenMobile((open) => !open) : setOpen((open) => !open)
+  }, [isMobile, setOpen, setOpenMobile])
 
-                    <div className="flex-1 p-2 bg-white">
-                        <ul className="flex flex-col">{children}</ul>
-                    </div>
-                </div>
-            </aside>
-        </>
-    );
-};
+  React.useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (
+        event.key === SIDEBAR_KEYBOARD_SHORTCUT &&
+        (event.metaKey || event.ctrlKey)
+      ) {
+        event.preventDefault()
+        toggleSidebar()
+      }
+    }
 
-export const NavItem: React.FC<NavItemProps> = ({
-    icon, label, isCollapsed, isMobileOpen, href = "#",
-    setActiveTooltip, onLinkClick, isActive,
-    showCollapsedTooltip = true
-}) => {
-    const handleClick = () => {
-        setActiveTooltip(null);
-        if (onLinkClick) onLinkClick();
-    };
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [toggleSidebar])
 
-    const shouldShowTooltip = isCollapsed && !isMobileOpen && showCollapsedTooltip;
+  const state = open ? "expanded" : "collapsed"
 
-    return (
-        <li
-            className="relative sidebar-interactive"
+  const contextValue = React.useMemo<SidebarContextProps>(
+    () => ({
+      state,
+      open,
+      setOpen,
+      isMobile,
+      openMobile,
+      setOpenMobile,
+      toggleSidebar,
+    }),
+    [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar]
+  )
+
+  return (
+    <SidebarContext.Provider value={contextValue}>
+      <TooltipProvider delayDuration={0}>
+        <div
+          data-slot="sidebar-wrapper"
+          style={
+            {
+              "--sidebar-width": SIDEBAR_WIDTH,
+              "--sidebar-width-icon": SIDEBAR_WIDTH_ICON,
+              ...style,
+            } as React.CSSProperties
+          }
+          className={cn(
+            "group/sidebar-wrapper has-data-[variant=inset]:bg-sidebar flex min-h-svh w-full",
+            className
+          )}
+          {...props}
         >
-            {shouldShowTooltip ? (
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <Link
-                            href={href}
-                            onClick={handleClick}
-                            aria-label={label}
-                            className={twMerge(
-                                `flex w-full items-center p-2 rounded-md hover:bg-blue-50 font-bold transition-colors duration-200`,
-                                "gap-3",
-                                isCollapsed && !isMobileOpen ? "justify-center" : "",
-                                isActive ? "bg-blue-100 text-gray-900 font-extrabold" : ""
-                            )}
-                        >
-                            <span className="">{icon}</span>
-                            {(!isCollapsed || isMobileOpen) && (
-                                <span className={twMerge(
-                                    "overflow-hidden whitespace-nowrap transition-all duration-300 text-sm font-medium",
-                                    "w-auto",
-                                    isCollapsed ? "lg:w-0" : "w-auto"
-                                )}>
-                                    {label}
-                                </span>
-                            )}
-                        </Link>
-                    </TooltipTrigger>
-                    <TooltipContent side="right">
-                        <p>{label}</p>
-                    </TooltipContent>
-                </Tooltip>
-            ) : (
-                <Link
-                    href={href}
-                    onClick={handleClick}
-                    aria-label={label}
-                    className={twMerge(
-                        `flex w-full items-center rounded-md px-3 py-2 font-bold hover:bg-blue-50 transition-colors duration-200`,
-                        "gap-3",
-                        isCollapsed && !isMobileOpen ? "justify-center" : "",
-                        isActive ? "bg-blue-100 text-gray-900 font-semibold" : ""
-                    )}
-                >
-                    <span className="shrink-0">{icon}</span>
-                    {(!isCollapsed || isMobileOpen) && (
-                        <span className={twMerge(
-                            "overflow-hidden whitespace-nowrap transition-all duration-300 text-sm font-medium",
-                            "w-auto",
-                            isCollapsed ? "lg:w-0" : "w-auto"
-                        )}>
-                            {label}
-                        </span>
-                    )}
-                </Link>
-            )}
-        </li>
-    );
-};
+          {children}
+        </div>
+      </TooltipProvider>
+    </SidebarContext.Provider>
+  )
+}
 
-export const SidebarDropdown: React.FC<SidebarDropdownProps> = ({
-    icon, label, children,
-    firstChildHref,
-    isCollapsed, isMobileOpen,
-    activeTooltip, setActiveTooltip, isOpen, onToggle,
-    isActive = false
-}) => {
-    const router = useRouter();
+function Sidebar({
+  side = "left",
+  variant = "sidebar",
+  collapsible = "offcanvas",
+  className,
+  children,
+  ...props
+}: React.ComponentProps<"div"> & {
+  side?: "left" | "right"
+  variant?: "sidebar" | "floating" | "inset"
+  collapsible?: "offcanvas" | "icon" | "none"
+}) {
+  const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
 
-    const [hasClicked, setHasClicked] = useState(false);
-    const isActiveTooltip = activeTooltip === label;
-    const showExpanded = !isCollapsed || isMobileOpen;
-
-    const contentRef = useRef<HTMLDivElement | null>(null);
-    const [contentHeight, setContentHeight] = useState<number>(0);
-    const [renderExpanded, setRenderExpanded] = useState<boolean>(showExpanded && isOpen);
-    const [shouldAnimateOpen, setShouldAnimateOpen] = useState(false);
-
-    // 1. Ref for the list item to measure position
-    const liRef = useRef<HTMLLIElement>(null);
-    const popupRef = useRef<HTMLUListElement>(null);
-    // 2. State to determine vertical alignment ('top' or 'bottom')
-    const [popupPlacement, setPopupPlacement] = useState<'top' | 'bottom'>('top');
-
-    // 3. Smart Positioning Logic
-    useEffect(() => {
-        // Only run this calculation when the tooltip is active and elements exist
-        if (isActiveTooltip && liRef.current && popupRef.current) {
-            
-            // Get dimensions
-            const triggerRect = liRef.current.getBoundingClientRect();
-            const popupHeight = popupRef.current.offsetHeight; // Actual height of the dropdown
-            const viewportHeight = window.innerHeight;
-
-            // Calculate available space below the trigger's top edge
-            // (We use top edge because 'top-0' aligns with the top of the trigger)
-            const spaceBelow = viewportHeight - triggerRect.top;
-            
-            // Logic: If the popup is taller than the space available below, flip it to the bottom.
-            // We add a small buffer (e.g., 20px) to prevent it from touching the screen edge.
-            if (spaceBelow < (popupHeight + 20)) {
-                setPopupPlacement('bottom');
-            } else {
-                setPopupPlacement('top');
-            }
-        }
-    }, [isActiveTooltip]); // Re-run whenever it opens
-
-    const handleToggle = (e: React.MouseEvent) => {
-        if (isCollapsed && !isMobileOpen) {
-            if (firstChildHref) {
-                e.preventDefault();
-                setActiveTooltip(null);
-                setHasClicked(false);
-                router.push(firstChildHref);
-                return;
-            }
-
-            // Check if this specific dropdown is currently open (via hover or click)
-            if (activeTooltip === label) {
-                // SCENARIO: The popup is OPEN
-                
-                if (!hasClicked) {
-                    // Case 1: Opened via Hover, this is the FIRST click.
-                    // Action: Don't close. Just mark it as clicked.
-                    e.preventDefault();
-                    setHasClicked(true);
-                } else {
-                    // Case 2: Opened via Hover and already clicked ONCE.
-                    // Action: This is the second click, so Close it.
-                    setActiveTooltip(null);
-                    setHasClicked(false);
-                }
-            } else {
-                // SCENARIO: The popup is CLOSED (e.g., clicked without hovering first)
-                e.preventDefault();
-                setActiveTooltip(label);
-                setHasClicked(true); // Mark as clicked immediately
-            }
-        } else {
-            onToggle();
-        }
-    };
-
-    // const handleToggle = (e: React.MouseEvent) => {
-    //     if (isCollapsed && !isMobileOpen) {
-    //         if (activeTooltip !== label) {
-    //             e.preventDefault();
-    //             setActiveTooltip(label);
-    //         } else {
-    //             setActiveTooltip(null);
-    //         }
-    //     } else {
-    //         onToggle();
-    //     }
-    // };
-
-    useEffect(() => {
-        const update = () => {
-            if (contentRef.current) {
-                setContentHeight(contentRef.current.scrollHeight);
-            }
-        };
-        update();
-        const ro = new ResizeObserver(update);
-        if (contentRef.current) ro.observe(contentRef.current);
-        window.addEventListener("resize", update);
-        return () => {
-            ro.disconnect();
-            window.removeEventListener("resize", update);
-        };
-    }, [children]);
-
-    useEffect(() => {
-        if (showExpanded) {
-            setRenderExpanded(true);
-        } else {
-            const t = setTimeout(() => setRenderExpanded(false), 320);
-            return () => clearTimeout(t);
-        }
-    }, [showExpanded]);
-
-    useEffect(() => {
-        if (showExpanded && isOpen) {
-            setRenderExpanded(true);
-            setShouldAnimateOpen(false);
-            const t = setTimeout(() => setShouldAnimateOpen(true), 20);
-            return () => clearTimeout(t);
-        }
-    }, [showExpanded, isOpen]);
-
-    // New changes
-
-    useEffect(() => {
-        if (activeTooltip !== label) {
-            setHasClicked(false);
-        }
-    }, [activeTooltip, label]);
-
+  if (collapsible === "none") {
     return (
-        <li 
-        
-            ref={liRef}
-            className="relative group sidebar-interactive"
+      <div
+        data-slot="sidebar"
+        className={cn(
+          "bg-sidebar text-sidebar-foreground flex h-full w-(--sidebar-width) flex-col",
+          className
+        )}
+        {...props}
+      >
+        {children}
+      </div>
+    )
+  }
+
+  if (isMobile) {
+    return (
+      <Sheet open={openMobile} onOpenChange={setOpenMobile} {...props}>
+        <SheetContent
+          data-sidebar="sidebar"
+          data-slot="sidebar"
+          data-mobile="true"
+          className="bg-sidebar text-sidebar-foreground w-(--sidebar-width) p-0 [&>button]:hidden"
+          style={
+            {
+              "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
+            } as React.CSSProperties
+          }
+          side={side}
         >
-            {isCollapsed && !isMobileOpen ? (
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <button
-                            onClick={handleToggle}
-                            aria-label={label}
-                            className={twMerge(
-                                `flex w-full items-center rounded-md p-2 hover:bg-blue-50 font-bold transition-colors duration-200 cursor-pointer`,
-                                // Mobile: Always spread apart
-                                "justify-between gap-3",
-                                isCollapsed && !isMobileOpen ? "justify-center" : "",
-                                isActiveTooltip ? "bg-blue-50 text-gray-900" : "",
-                                isActive ? "bg-blue-100 text-gray-900 font-semibold" : ""
-                            )}
-                        >
-                            <div className={twMerge("flex items-center", icon ? "gap-3" : "")}>
-                                {icon ? <span className="shrink-0">{icon}</span> : null}
-                                {(!isCollapsed || isMobileOpen) && (
-                                <span className={twMerge(
-                                    "text-sm font-medium whitespace-nowrap overflow-hidden transition-all duration-300",
-                                    "w-auto opacity-100",
-                                    isCollapsed ? "lg:w-0 lg:opacity-0" : "lg:w-auto lg:opacity-100"
-                                )}>
-                                    {label}
-                                </span>
-                                )}
-                            </div>
+          <SheetHeader className="sr-only">
+            <SheetTitle>Sidebar</SheetTitle>
+            <SheetDescription>Displays the mobile sidebar.</SheetDescription>
+          </SheetHeader>
+          <div className="flex h-full w-full flex-col">{children}</div>
+        </SheetContent>
+      </Sheet>
+    )
+  }
 
-                            <div className={twMerge(
-                                "transition-transform duration-300 ease-in-out",
-                                isOpen ? "rotate-180" : "",
-                                (isCollapsed && !isMobileOpen) ? "hidden" : "block"
-                            )}>
-                                <BiChevronDown style={{ fontSize: 16}} />
-                            </div>
-                        </button>
-                    </TooltipTrigger>
-                    <TooltipContent side="right">
-                        <p>{label}</p>
-                    </TooltipContent>
-                </Tooltip>
-            ) : (
-                <button
-                    onClick={handleToggle}
-                    aria-label={label}
-                    className={twMerge(
-                        `flex w-full items-center rounded-md px-3 py-2 font-bold hover:bg-blue-50 transition-colors duration-200 cursor-pointer text-gray-900`,
-                        // Mobile: Always spread apart
-                        "justify-between gap-3",
-                        isCollapsed && !isMobileOpen ? "justify-center" : "",
-                        isActiveTooltip ? "bg-blue-50 text-gray-900" : "",
-                        isActive ? "bg-blue-100 text-gray-900 font-semibold" : ""
-                    )}
-                >
-                    <div className={twMerge("flex items-center", icon ? "gap-3" : "")}>
-                        {icon ? <span className="shrink-0">{icon}</span> : null}
-                        {(!isCollapsed || isMobileOpen) && (
-                        <span className={twMerge(
-                            "text-sm font-medium whitespace-nowrap overflow-hidden transition-all duration-300",
-                            "w-auto opacity-100",
-                            isCollapsed ? "lg:w-0 lg:opacity-0" : "lg:w-auto lg:opacity-100"
-                        )}>
-                            {label}
-                        </span>
-                        )}
-                    </div>
+  return (
+    <div
+      className="group peer text-sidebar-foreground hidden md:block"
+      data-state={state}
+      data-collapsible={state === "collapsed" ? collapsible : ""}
+      data-variant={variant}
+      data-side={side}
+      data-slot="sidebar"
+    >
+      {/* This is what handles the sidebar gap on desktop */}
+      <div
+        data-slot="sidebar-gap"
+        className={cn(
+          "relative w-(--sidebar-width) bg-transparent transition-[width] duration-200 ease-linear",
+          "group-data-[collapsible=offcanvas]:w-0",
+          "group-data-[side=right]:rotate-180",
+          variant === "floating" || variant === "inset"
+            ? "group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4)))]"
+            : "group-data-[collapsible=icon]:w-(--sidebar-width-icon)"
+        )}
+      />
+      <div
+        data-slot="sidebar-container"
+        className={cn(
+          "fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[left,right,width] duration-200 ease-linear md:flex",
+          side === "left"
+            ? "left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]"
+            : "right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]",
+          variant === "floating" || variant === "inset"
+            ? "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]"
+            : "group-data-[collapsible=icon]:w-(--sidebar-width-icon) group-data-[side=left]:border-r group-data-[side=right]:border-l",
+          className
+        )}
+        {...props}
+      >
+        <div
+          data-sidebar="sidebar"
+          data-slot="sidebar-inner"
+          className="bg-sidebar group-data-[variant=floating]:border-sidebar-border flex h-full w-full flex-col group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:shadow-sm"
+        >
+          {children}
+        </div>
+      </div>
+    </div>
+  )
+}
 
-                    <div className={twMerge(
-                        "transition-transform duration-300 ease-in-out",
-                        isOpen ? "rotate-180" : "",
-                        (isCollapsed && !isMobileOpen) ? "hidden" : "block"
-                    )}>
-                        <BiChevronDown style={{ fontSize: 16}} />
-                    </div>
-                </button>
-            )}
+function SidebarTrigger({
+  className,
+  onClick,
+  ...props
+}: React.ComponentProps<typeof Button>) {
+  const { toggleSidebar } = useSidebar()
 
-            {renderExpanded && (
-                <div
-                    className="relative overflow-hidden transition-[max-height,opacity] duration-300 ease-in-out"
-                    style={{
-                        maxHeight: (showExpanded && isOpen && shouldAnimateOpen) ? `${contentHeight}px` : "0px",
-                        opacity: (showExpanded && isOpen && shouldAnimateOpen) ? 1 : 0
-                    }}
-                >
-                    <div className="absolute left-[22px] top-0 bottom-0 w-px bg-gray-200" />
-                    <ul>
-                        <div ref={contentRef} className="pl-8 mt-1 space-y-1 pb-1">
-                            {children}
-                        </div>
-                    </ul>
-                </div>
-            )}
-        </li>
-    );
-};
+  return (
+    <Button
+      data-sidebar="trigger"
+      data-slot="sidebar-trigger"
+      variant="ghost"
+      size="icon"
+      className={cn("cursor-w-resize border p-1", className)}
+      onClick={(event) => {
+        onClick?.(event)
+        toggleSidebar()
+      }}
+      {...props}
+    >
+      <PanelLeftIcon className="cursor-w-resize size-5" />
+      <span className="sr-only">Toggle Sidebar</span>
+    </Button>
+  )
+}
 
-export const SidebarDropdownItem: React.FC<SidebarDropdownItemProps> = ({
-    href,
-    icon,
-    label,
-    isActive = false,
-    onClick,
-}) => {
-    return (
-        <li>
-            <Link
-                href={href}
-                onClick={onClick}
-                className={twMerge(
-                    `flex items-center rounded-md p-2 text-sm transition-colors cursor-pointer font-medium text-gray-900`,
-                    icon ? "gap-3" : "",
-                    isActive
-                        ? "bg-blue-100"
-                        : "hover:bg-blue-100"
-                )}
-            >
-                {icon && <span className="shrink-0">{icon}</span>}
-                <span className="overflow-hidden whitespace-nowrap transition-all duration-300">
-                    {label}
-                </span>
-            </Link>
-        </li>
-    );
-};
+function SidebarRail({ className, ...props }: React.ComponentProps<"button">) {
+  const { toggleSidebar } = useSidebar()
 
-export const SidebarSectionTitle: React.FC<SidebarSectionTitleProps> = ({
-    label,
-    isCollapsed
-}) => {
-    return (
-        <li className="px-3 py-2">
-            <div className={twMerge(
-                "text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap transition-all duration-300",
-                isCollapsed ? "lg:opacity-0 lg:w-0" : "opacity-100 w-auto"
-            )}>
-                {label}
-            </div>
-            <div className={twMerge(
-                "mt-1 border-t border-gray-200 transition-all duration-300",
-                isCollapsed ? "lg:opacity-0 lg:w-0" : "opacity-100 w-auto"
-            )} />
-        </li>
-    );
-};
+  return (
+    <button
+      data-sidebar="rail"
+      data-slot="sidebar-rail"
+      aria-label="Toggle Sidebar"
+      tabIndex={-1}
+      onClick={toggleSidebar}
+      title="Toggle Sidebar"
+      className={cn(
+        "hover:after:bg-sidebar-border absolute inset-y-0 z-20 hidden w-4 -translate-x-1/2 transition-all ease-linear group-data-[side=left]:-right-4 group-data-[side=right]:left-0 after:absolute after:inset-y-0 after:left-1/2 after:w-[2px] sm:flex",
+        "in-data-[side=left]:cursor-w-resize in-data-[side=right]:cursor-e-resize",
+        "[[data-side=left][data-state=collapsed]_&]:cursor-e-resize [[data-side=right][data-state=collapsed]_&]:cursor-w-resize",
+        "hover:group-data-[collapsible=offcanvas]:bg-sidebar group-data-[collapsible=offcanvas]:translate-x-0 group-data-[collapsible=offcanvas]:after:left-full",
+        "[[data-side=left][data-collapsible=offcanvas]_&]:-right-2",
+        "[[data-side=right][data-collapsible=offcanvas]_&]:-left-2",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function SidebarInset({ className, ...props }: React.ComponentProps<"main">) {
+  return (
+    <main
+      data-slot="sidebar-inset"
+      className={cn(
+        "bg-background relative flex w-full flex-1 flex-col",
+        "md:peer-data-[variant=inset]:m-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow-sm md:peer-data-[variant=inset]:peer-data-[state=collapsed]:ml-2",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function SidebarInput({
+  className,
+  ...props
+}: React.ComponentProps<typeof Input>) {
+  return (
+    <Input
+      data-slot="sidebar-input"
+      data-sidebar="input"
+      className={cn("bg-background h-8 w-full shadow-none", className)}
+      {...props}
+    />
+  )
+}
+
+function SidebarHeader({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="sidebar-header"
+      data-sidebar="header"
+      className={cn("flex flex-col justify-center gap-2 p-2 border-b h-16 bg-white", className)}
+      {...props}
+    />
+  )
+}
+
+function SidebarFooter({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="sidebar-footer"
+      data-sidebar="footer"
+      className={cn("flex flex-col gap-2 p-2", className)}
+      {...props}
+    />
+  )
+}
+
+function SidebarSeparator({
+  className,
+  ...props
+}: React.ComponentProps<typeof Separator>) {
+  return (
+    <Separator
+      data-slot="sidebar-separator"
+      data-sidebar="separator"
+      className={cn("bg-sidebar-border mx-2 w-auto", className)}
+      {...props}
+    />
+  )
+}
+
+function SidebarContent({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="sidebar-content"
+      data-sidebar="content"
+      className={cn(
+        "bg-white flex min-h-0 flex-1 flex-col gap-2 overflow-auto group-data-[collapsible=icon]:overflow-hidden",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function SidebarGroup({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="sidebar-group"
+      data-sidebar="group"
+      className={cn("relative flex w-full min-w-0 flex-col p-2", className)}
+      {...props}
+    />
+  )
+}
+
+function SidebarGroupLabel({
+  className,
+  asChild = false,
+  ...props
+}: React.ComponentProps<"div"> & { asChild?: boolean }) {
+  const Comp = asChild ? Slot.Root : "div"
+
+  return (
+    <Comp
+      data-slot="sidebar-group-label"
+      data-sidebar="group-label"
+      className={cn(
+        "text-sidebar-foreground/70 ring-sidebar-ring flex h-8 shrink-0 items-center rounded-md px-2 text-xs font-medium outline-hidden transition-[margin,opacity] duration-200 ease-linear focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0",
+        "group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function SidebarGroupAction({
+  className,
+  asChild = false,
+  ...props
+}: React.ComponentProps<"button"> & { asChild?: boolean }) {
+  const Comp = asChild ? Slot.Root : "button"
+
+  return (
+    <Comp
+      data-slot="sidebar-group-action"
+      data-sidebar="group-action"
+      className={cn(
+        "text-sidebar-foreground ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground absolute top-3.5 right-3 flex aspect-square w-5 items-center justify-center rounded-md p-0 outline-hidden transition-transform focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0",
+        // Increases the hit area of the button on mobile.
+        "after:absolute after:-inset-2 md:after:hidden",
+        "group-data-[collapsible=icon]:hidden",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function SidebarGroupContent({
+  className,
+  ...props
+}: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="sidebar-group-content"
+      data-sidebar="group-content"
+      className={cn("w-full text-sm", className)}
+      {...props}
+    />
+  )
+}
+
+function SidebarMenu({ className, ...props }: React.ComponentProps<"ul">) {
+  return (
+    <ul
+      data-slot="sidebar-menu"
+      data-sidebar="menu"
+      className={cn("flex w-full min-w-0 flex-col", className)}
+      {...props}
+    />
+  )
+}
+
+function SidebarMenuItem({ className, ...props }: React.ComponentProps<"li">) {
+  return (
+    <li
+      suppressHydrationWarning
+      data-slot="sidebar-menu-item"
+      data-sidebar="menu-item"
+      className={cn("group/menu-item relative", className)}
+      {...props}
+    />
+  )
+}
+
+const sidebarMenuButtonVariants = cva(
+  "peer/menu-button flex w-full items-center gap-3 overflow-hidden rounded-md p-2 text-left text-sm outline-hidden ring-sidebar-ring transition-[width,height,padding] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 group-has-data-[sidebar=menu-action]/menu-item:pr-8 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:bg-sidebar-accent data-[active=true]:font-medium data-[active=true]:text-sidebar-accent-foreground data-[state=open]:hover:bg-sidebar-accent data-[state=open]:hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:!w-full group-data-[collapsible=icon]:!h-8 group-data-[collapsible=icon]:!p-2 group-data-[collapsible=icon]:!gap-0 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:[&>span]:hidden group-data-[collapsible=icon]:[&>svg:not(:first-child)]:hidden [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0",
+  {
+    variants: {
+      variant: {
+        default: "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+        outline:
+          "bg-background shadow-[0_0_0_1px_hsl(var(--sidebar-border))] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:shadow-[0_0_0_1px_hsl(var(--sidebar-accent))]",
+      },
+      size: {
+        default: "h-8 text-sm",
+        sm: "h-7 text-xs",
+        lg: "h-12 text-sm group-data-[collapsible=icon]:p-0!",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+      size: "default",
+    },
+  }
+)
+
+function SidebarMenuButton({
+  asChild = false,
+  isActive = false,
+  variant = "default",
+  size = "default",
+  tooltip,
+  className,
+  ...props
+}: React.ComponentProps<"button"> & {
+  asChild?: boolean
+  isActive?: boolean
+  tooltip?: string | React.ComponentProps<typeof TooltipContent>
+} & VariantProps<typeof sidebarMenuButtonVariants>) {
+  const Comp = asChild ? Slot.Root : "button"
+  const { isMobile, state } = useSidebar()
+
+  const button = (
+    <Comp
+      suppressHydrationWarning
+      data-slot="sidebar-menu-button"
+      data-sidebar="menu-button"
+      data-size={size}
+      data-active={isActive}
+      className={cn(sidebarMenuButtonVariants({ variant, size }), className)}
+      {...props}
+    />
+  )
+
+  if (!tooltip) {
+    return button
+  }
+
+  if (typeof tooltip === "string") {
+    tooltip = {
+      children: tooltip,
+    }
+  }
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{button}</TooltipTrigger>
+      <TooltipContent
+        side="right"
+        align="center"
+        hidden={state !== "collapsed" || isMobile}
+        {...tooltip}
+      />
+    </Tooltip>
+  )
+}
+
+function SidebarMenuAction({
+  className,
+  asChild = false,
+  showOnHover = false,
+  ...props
+}: React.ComponentProps<"button"> & {
+  asChild?: boolean
+  showOnHover?: boolean
+}) {
+  const Comp = asChild ? Slot.Root : "button"
+
+  return (
+    <Comp
+      data-slot="sidebar-menu-action"
+      data-sidebar="menu-action"
+      className={cn(
+        "text-sidebar-foreground ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground peer-hover/menu-button:text-sidebar-accent-foreground absolute top-1.5 right-1 flex aspect-square w-5 items-center justify-center rounded-md p-0 outline-hidden transition-transform focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0",
+        // Increases the hit area of the button on mobile.
+        "after:absolute after:-inset-2 md:after:hidden",
+        "peer-data-[size=sm]/menu-button:top-1",
+        "peer-data-[size=default]/menu-button:top-1.5",
+        "peer-data-[size=lg]/menu-button:top-2.5",
+        "group-data-[collapsible=icon]:hidden",
+        showOnHover &&
+          "peer-data-[active=true]/menu-button:text-sidebar-accent-foreground group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 data-[state=open]:opacity-100 md:opacity-0",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function SidebarMenuBadge({
+  className,
+  ...props
+}: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="sidebar-menu-badge"
+      data-sidebar="menu-badge"
+      className={cn(
+        "text-sidebar-foreground pointer-events-none absolute right-1 flex h-5 min-w-5 items-center justify-center rounded-md px-1 text-xs font-medium tabular-nums select-none",
+        "peer-hover/menu-button:text-sidebar-accent-foreground peer-data-[active=true]/menu-button:text-sidebar-accent-foreground",
+        "peer-data-[size=sm]/menu-button:top-1",
+        "peer-data-[size=default]/menu-button:top-1.5",
+        "peer-data-[size=lg]/menu-button:top-2.5",
+        "group-data-[collapsible=icon]:hidden",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function SidebarMenuSkeleton({
+  className,
+  showIcon = false,
+  ...props
+}: React.ComponentProps<"div"> & {
+  showIcon?: boolean
+}) {
+  // Random width between 50 to 90%.
+  const width = React.useMemo(() => {
+    return `${Math.floor(Math.random() * 40) + 50}%`
+  }, [])
+
+  return (
+    <div
+      data-slot="sidebar-menu-skeleton"
+      data-sidebar="menu-skeleton"
+      className={cn("flex h-8 items-center gap-2 rounded-md px-2", className)}
+      {...props}
+    >
+      {showIcon && (
+        <Skeleton
+          className="size-4 rounded-md"
+          data-sidebar="menu-skeleton-icon"
+        />
+      )}
+      <Skeleton
+        className="h-4 max-w-(--skeleton-width) flex-1"
+        data-sidebar="menu-skeleton-text"
+        style={
+          {
+            "--skeleton-width": width,
+          } as React.CSSProperties
+        }
+      />
+    </div>
+  )
+}
+
+function SidebarMenuSub({ className, ...props }: React.ComponentProps<"ul">) {
+  return (
+    <ul
+      data-slot="sidebar-menu-sub"
+      data-sidebar="menu-sub"
+      className={cn(
+        "border-sidebar-border mx-3.5 flex min-w-0 translate-x-px flex-col border-l px-2.5 py-0.5",
+        "group-data-[collapsible=icon]:hidden",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function SidebarMenuSubItem({
+  className,
+  ...props
+}: React.ComponentProps<"li">) {
+  return (
+    <li
+      data-slot="sidebar-menu-sub-item"
+      data-sidebar="menu-sub-item"
+      className={cn("group/menu-sub-item relative", className)}
+      {...props}
+    />
+  )
+}
+
+function SidebarMenuSubButton({
+  asChild = false,
+  size = "md",
+  isActive = false,
+  className,
+  ...props
+}: React.ComponentProps<"a"> & {
+  asChild?: boolean
+  size?: "sm" | "md"
+  isActive?: boolean
+}) {
+  const Comp = asChild ? Slot.Root : "a"
+
+  return (
+    <Comp
+      data-slot="sidebar-menu-sub-button"
+      data-sidebar="menu-sub-button"
+      data-size={size}
+      data-active={isActive}
+      className={cn(
+        "text-sidebar-foreground ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground active:bg-sidebar-accent active:text-sidebar-accent-foreground [&>svg]:text-sidebar-accent-foreground flex h-7 min-w-0 -translate-x-px items-center gap-2 overflow-hidden rounded-md px-2 outline-hidden focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0",
+        "data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground",
+        size === "sm" && "text-xs",
+        size === "md" && "text-sm",
+        "group-data-[collapsible=icon]:hidden",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+export {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupAction,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarInput,
+  SidebarInset,
+  SidebarMenu,
+  SidebarMenuAction,
+  SidebarMenuBadge,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarMenuSkeleton,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
+  SidebarProvider,
+  SidebarRail,
+  SidebarSeparator,
+  SidebarTrigger,
+  useSidebar,
+}

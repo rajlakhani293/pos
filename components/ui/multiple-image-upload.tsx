@@ -617,7 +617,7 @@ export function MultipleImageUpload({
                   className="h-full w-full object-contain rounded-lg border border-gray-200 bg-gray-50"
                 />
                 {frontImagesState[0].isPrimary && (
-                  <div className="absolute top-0 right-0 bg-blue-600 text-white p-1 rounded-tr-lg rounded-bl-lg shadow-sm z-10">
+                  <div className="absolute top-0 right-0 bg-blue-600 text-white p-1 rounded-tr-lg rounded-bl-lg shadow-sm">
                     <BadgeCheckIcon className="size-3" />
                   </div>
                 )}
@@ -705,7 +705,7 @@ export function MultipleImageUpload({
                   className="w-full h-full object-contain rounded-lg border border-gray-200 bg-gray-50"
                 />
                 {rearImagesState[0].isPrimary && (
-                  <div className="absolute top-0 right-0 bg-blue-600 text-white p-1 rounded-tr-lg rounded-bl-lg shadow-sm z-10">
+                  <div className="absolute top-0 right-0 bg-blue-600 text-white p-1 rounded-tr-lg rounded-bl-lg shadow-sm">
                     <BadgeCheckIcon className="size-3" />
                   </div>
                 )}

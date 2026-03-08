@@ -1,160 +1,134 @@
 "use client"
 
-import React, { useState } from "react";
-import { usePathname } from "next/navigation";
-import { 
-  SidebarContainer, 
-  NavItem, 
-  SidebarDropdown, 
-  SidebarDropdownItem 
-} from "@/components/ui/sidebar";
-import SidebarHeader from "@/components/ui/sidebar-header";
-import { DashboardIcon, InventoryIcon, SettingIcon, SalesIcon } from "@/components/AppIcon";
-import { useSidebar } from "@/components/ui/sidebar-context";
+import * as React from "react"
+import { NavMain } from "@/components/nav-main"
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarHeader,
+  SidebarRail,
+  SidebarTrigger,
+} from "@/components/ui/sidebar"
+import { DashboardIcon, InventoryIcon, NextJsIcon, PanelRight, SettingIcon, SalesIcon } from "@/components/AppIcon"
+import { useSidebar } from "@/components/ui/sidebar"
 
-// Navigation data
+// This is sample data.
 export const navData = [
-  {
-    label: "Dashboard",
-    href: "/dashboard",
-    icon: <DashboardIcon className="w-5 h-5" />
-  },
-  {
-    label: "Sales",
-    href: "/sales",
-    icon: <SalesIcon className="w-5 h-5" />
-  },
-  {
-    label: "Inventory",
-    icon: <InventoryIcon className="w-5 h-5" />,
-    children: [
-      {
-        label: "Items",
-        href: "/inventory/items"
-      },
-      {
-        label: "Item Categories", 
-        href: "/inventory/categories"
-      },
-      {
-        label: "Item Units",
-        href: "/inventory/units"
-      }
-    ]
-  },
-  {
-    label: "Settings",
-    href: "/settings/taxes",
-    icon: <SettingIcon className="w-5 h-5" />
-  }
-];
+    {
+      title: "Dashboard",
+      url: "/dashboard",
+      icon: DashboardIcon
+    },
+    {
+      title: "Sales",
+      url: "/sales",
+      icon: SalesIcon
+    },
+    {
+      title: "Inventory",
+      url: "#",
+      icon: InventoryIcon,
+      items: [
+        {
+          title: "Items",
+          url: "/inventory/items",
+        },
+        {
+          title: "Item Categories",
+          url: "/inventory/categories",
+        },
+        {
+          title: "Item Units",
+          url: "/inventory/units",
+        },
+        {
+          title: "Stock Adjustments",
+          url: "/inventory/stock",
+        },
+      ],
+    },
+    {
+      title: "Settings",
+      url: "/settings/taxes",
+      icon: SettingIcon
+    }
+  ]
 
-export function AppSidebar() {
-  const pathname = usePathname();
-  const { isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen, toggleSidebar } = useSidebar();
-  const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
-  const [openDropdowns, setOpenDropdowns] = useState<Set<string>>(new Set());
+import { usePathname } from "next/navigation"
 
-  const closeMobile = () => {
-    setIsMobileOpen(false);
-  };
+export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { state, toggleSidebar } = useSidebar()
+  const pathname = usePathname()
 
-  const toggleDropdown = (label: string) => {
-    setOpenDropdowns(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(label)) {
-        newSet.delete(label);
+  const findActiveMenu = (item: any, pathname: string) => {
+    const isChildActive = item.items?.some((subItem: any) => {
+      return pathname === subItem.url || pathname.startsWith(subItem.url + "/")
+    })
+    const isSelfActive = pathname === item.url
+    
+    const pathSegments = pathname.split('/').filter(Boolean)
+    const currentModule = pathSegments[0] 
+    
+    const isModuleActive = (() => {
+      if (item.url === "#") {
+        const itemTitleLower = item.title.toLowerCase()
+        return itemTitleLower === currentModule || 
+               item.items?.some((subItem: any) => subItem.url.includes(`/${currentModule}/`))
       } else {
-        newSet.add(label);
+        const urlSegments = item.url.replace(/\/$/, '').split('/').filter(Boolean)
+        const itemModule = urlSegments[0]
+        return itemModule === currentModule && pathname.startsWith(`/${currentModule}/`)
       }
-      return newSet;
-    });
-  };
-
-  const isActive = (href: string) => {
-    if (href === "/settings/taxes" && pathname.startsWith("/settings/")) {
-      return true;
+    })()
+    
+    return {
+      isActive: isSelfActive || isChildActive || isModuleActive,
+      isExpanded: isSelfActive || isChildActive || isModuleActive,
+      isChildActive,
+      isModuleActive
     }
-    if (href === "/sales" && pathname.startsWith("/sales/")) {
-      return true;
-    }
-    if (href === "/inventory/items" && pathname.startsWith("/inventory/items")) {
-      return true;
-    }
-    return pathname === href;
-  };
+  }
 
-  const isDropdownActive = (children?: { href: string }[]) => {
-    return children?.some(child => isActive(child.href));
-  };
-
-  const isDropdownOpen = (label: string, children?: { href: string }[]) => {
-    return openDropdowns.has(label) || isDropdownActive(children);
-  };
-
-  const renderNavItems = (items: typeof navData) => {
-    return items.map((item) => {
-      if (item.children && item.children.length > 0) {
-        return (
-          <SidebarDropdown
-            key={item.label}
-            icon={item.icon}
-            label={item.label}
-            firstChildHref={item.children[0]?.href}
-            isCollapsed={isCollapsed}
-            isMobileOpen={isMobileOpen}
-            activeTooltip={activeTooltip}
-            setActiveTooltip={setActiveTooltip}
-            isOpen={isDropdownOpen(item.label, item.children) || false}
-            onToggle={() => toggleDropdown(item.label)}
-            isActive={isDropdownActive(item.children)}
-          >
-            {item.children.map((child) => (
-              <SidebarDropdownItem
-                key={child.label}
-                href={child.href}
-                label={child.label}
-                isActive={isActive(child.href)}
-              />
-            ))}
-          </SidebarDropdown>
-        );
+  const navMain = React.useMemo(() => {
+    return navData.map((item) => {
+      const activeState = findActiveMenu(item, pathname)
+       
+      return {
+        ...item,
+        isActive: activeState.isActive,
+        isExpanded: activeState.isExpanded,
+        items: item.items?.map(subItem => ({
+           ...subItem,
+           isActive: pathname === subItem.url || pathname.startsWith(subItem.url + "/")
+        }))
       }
-
-      return (
-        <NavItem
-          key={item.label}
-          icon={item.icon}
-          label={item.label}
-          href={item.href || "#"}
-          isCollapsed={isCollapsed}
-          isMobileOpen={isMobileOpen}
-          activeTooltip={activeTooltip}
-          setActiveTooltip={setActiveTooltip}
-          isActive={isActive(item.href || "#")}
-        />
-      );
-    });
-  };
-
+    })
+  }, [pathname])
+  
   return (
-    <SidebarContainer
-      isCollapsed={isCollapsed}
-      isMobileOpen={isMobileOpen}
-      isResizing={false}
-      sidebarRef={React.useRef(null)}
-      header={
-        <SidebarHeader
-          isCollapsed={isCollapsed}
-          setIsCollapsed={setIsCollapsed}
-          isMobileOpen={isMobileOpen}
-          closeMobile={closeMobile}
-        />
-      }
-      toggleSidebar={toggleSidebar}
-      closeMobile={closeMobile}
-    >
-      {renderNavItems(navData)}
-    </SidebarContainer>
-  );
+    <Sidebar collapsible="icon" {...props}>
+      <SidebarHeader>
+        {state === "collapsed" ? (
+          <div className="flex items-center justify-center h-full">
+            <button
+              onClick={toggleSidebar}
+              className="p-1.5 rounded-lg hover:bg-sidebar-accent transition-colors relative group border cursor-e-resize"
+            >
+              <NextJsIcon className="size-6 group-hover:opacity-0 transition-opacity cursor-e-resize" />
+              <PanelRight className="size-5 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity cursor-e-resize" />
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between px-2">
+            <div className="text-2xl font-medium">Billing</div>
+            <SidebarTrigger/>
+          </div>
+        )}
+      </SidebarHeader>
+      <SidebarContent>
+        <NavMain items={navMain} />
+      </SidebarContent>
+      <SidebarRail />
+    </Sidebar>
+  )
 }

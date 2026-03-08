@@ -15,12 +15,12 @@ import { AiOutlineDashboard, AiOutlineEye, AiOutlineEyeInvisible } from "react-i
 import { IoIosCloseCircleOutline, IoMdClose, IoMdEye } from "react-icons/io";
 import { SiNextdotjs } from "react-icons/si";
 import { IoImagesOutline, IoSettingsOutline } from "react-icons/io5";
-import { AudioWaveform, BadgeCheck, Bell, BookOpen, Bot, CheckIcon, ChevronDownIcon, ChevronLeft, ChevronRight, ChevronsUpDown, ChevronUpIcon, CircleIcon, Command, CreditCard, Folder, Forward, Frame, GalleryVerticalEnd, LogOut, MinusIcon, MoreHorizontal, PanelLeftIcon, PanelRightIcon, PieChart, Plus, Settings2, Sparkles, SquareTerminal, Trash2 } from 'lucide-react';
+import { AudioWaveform, BadgeCheck, Bell, BookOpen, Bot, CheckIcon, ChevronDownIcon, ChevronLeft, ChevronRight, ChevronsUpDown, ChevronUpIcon, CircleIcon, Command, CreditCard, Folder, Forward, Frame, GalleryVerticalEnd, LogOut, Map, MinusIcon, MoreHorizontal, PanelLeftIcon, PanelRightIcon, PieChart, Plus, Settings2, Sparkles, SquareTerminal, Trash2 } from 'lucide-react';
 import { LuArrowUpDown, LuCirclePlus } from "react-icons/lu";
 import { FiEdit, FiMoreVertical } from "react-icons/fi";
 import { BiSearchAlt2 } from "react-icons/bi";
 import { HiOutlineCalendar } from "react-icons/hi";
-import { RiLoader2Line } from "react-icons/ri";
+import { RiLoader2Line, RiNextjsFill } from "react-icons/ri";
 import { BsPersonPlusFill } from 'react-icons/bs';
 import { TbReceiptTax } from "react-icons/tb";
 
@@ -85,6 +85,7 @@ export const EyeIcon = IoMdEye;
 export const PersonPlusIcon = BsPersonPlusFill;
 export const TagIcon = FaTag;
 export const TaxIcon = TbReceiptTax;
+export const NextIcon = RiNextjsFill;
 
 export const ImagePlusIcon = ({ className = "" }: { className?: string }) => (
   <svg 

@@ -251,6 +251,16 @@ export default function CreateSalePage() {
   };
 
   const handleTransactionChange = (index: number, name: string, value: any) => {
+    if (name === "item_quantity") {
+      const selectedItem = getItemById(formData.transactions[index]?.item_id);
+      const nextQty = parseFloat(value || "0");
+      const availableQty = parseFloat(selectedItem?.current_stock || "0");
+
+      if (selectedItem && nextQty > availableQty) {
+        showToast.error(`${selectedItem.label}: only ${availableQty} in stock`);
+      }
+    }
+
     setFormData((prev: any) => {
       const newTransactions = [...prev.transactions];
       newTransactions[index] = { ...newTransactions[index], [name]: value };
@@ -310,6 +320,23 @@ export default function CreateSalePage() {
 
     if (Object.keys(newErrors).length === 0) {
       try {
+        const insufficientItems = formData.transactions
+          .map((transaction: any) => {
+            const selectedItem = getItemById(transaction.item_id);
+            const requested = parseFloat(transaction.item_quantity || "0");
+            const available = parseFloat(selectedItem?.current_stock || "0");
+            if (!selectedItem || requested <= available) return null;
+            return { label: selectedItem.label, requested, available };
+          })
+          .filter(Boolean) as Array<{ label: string; requested: number; available: number }>;
+
+        if (insufficientItems.length > 0) {
+          const first = insufficientItems[0];
+          showToast.error(`Insufficient stock: ${first.label} (requested ${first.requested}, available ${first.available})`);
+          setIsSubmitting(false);
+          return;
+        }
+
         // Prepare the payload
         const payload = {
           ...formData,
@@ -413,6 +440,10 @@ export default function CreateSalePage() {
   const addItemToCart = (itemId: string) => {
     const selectedItem = itemsList.find((item) => item.value.toString() === itemId);
     if (!selectedItem) return;
+    if (parseFloat(selectedItem.current_stock || "0") <= 0) {
+      showToast.error(`${selectedItem.label} is out of stock`);
+      return;
+    }
 
     // Clear transaction error when item is added
     if (errors.transactions) {
@@ -428,6 +459,11 @@ export default function CreateSalePage() {
       if (existingIndex >= 0) {
         const newTransactions = [...prev.transactions];
         const currentQty = parseFloat(newTransactions[existingIndex].item_quantity || "0");
+        const availableQty = parseFloat(selectedItem.current_stock || "0");
+        if (currentQty + 1 > availableQty) {
+          showToast.error(`${selectedItem.label}: only ${availableQty} in stock`);
+          return prev;
+        }
         newTransactions[existingIndex] = {
           ...newTransactions[existingIndex],
           item_quantity: (currentQty + 1).toString(),
@@ -482,7 +518,6 @@ export default function CreateSalePage() {
       },
       {
         threshold: 0.01,
-        rootMargin: "0px",
         root: contentRef.current
       },
     );
@@ -503,8 +538,8 @@ export default function CreateSalePage() {
   }
 
   return (
-    <div className=" bg-white flex flex-col h-full overflow-hidden">
-      <div ref={contentRef} className="overflow-y-auto flex-1 custom-scrollbar">
+    <div className="bg-white flex flex-col h-full relative">
+      <div ref={contentRef} className="flex-1 overflow-y-auto custom-scrollbar">
         <form onSubmit={handleSubmit} noValidate className="space-y-6" id="sales-form">
           <div className="flex">
             <div className="space-y-4 flex-3 min-w-0 p-4 border-r border-gray-200">
@@ -629,6 +664,7 @@ export default function CreateSalePage() {
                               <td className="pl-2 py-2">
                                 <p className="font-semibold text-gray-900 line-clamp-1">{selectedItem?.label || "Unknown"}</p>
                                 <p className="text-[10px] text-gray-500">{selectedItem?.item_code || "N/A"}</p>
+                                <p className="text-[10px] text-gray-500">Stock: {selectedItem?.current_stock ?? 0}</p>
                               </td>
                               <td className="px-1 py-2 w-24">
                                 <UniFieldInput
@@ -824,12 +860,11 @@ export default function CreateSalePage() {
               </div>
             </div>
           </div>
-        </form>
         <div ref={paginationSentinelRef} className="h-px w-full" />
-        
-      </div>
-        <footer className={`mt-4 sticky z-10 transition-all duration-300 ease-in-out ${isFooterStuck ? "mx-6 bottom-3" : "mx-0 bottom-0"}`}>
-            <div className={`flex items-center justify-between gap-x-2 rounded-b-xl p-3 bg-white/90 backdrop-blur-md transition-shadow duration-200 ${isFooterStuck ? "rounded-t-xl shadow-lg border border-gray-200/80" : "rounded-t-none shadow-none border-t-2 border-gray-100"}`}>
+        </form>
+
+        <footer className={`sticky z-50 transition-all duration-300 ease-in-out ${isFooterStuck ? "mx-6 bottom-5" : "mx-0 bottom-0"}`}>
+            <div className={`flex items-center justify-between gap-x-2 p-3 bg-white/90 backdrop-blur-md transition-shadow duration-200 ${isFooterStuck ? "rounded-lg shadow-lg border border-gray-200/80" : "rounded-t-none shadow-none border-t-2 border-gray-100"}`}>
               <div className="flex items-center gap-4">
                 <div className="text-sm">
                   <span className="text-gray-600">Grand Total: </span>
@@ -863,8 +898,9 @@ export default function CreateSalePage() {
               </Button>
               </div>
             </div>
-          </footer>
+        </footer>
 
+      </div>
 
       {/* Add Forms */}
       <PartyForm

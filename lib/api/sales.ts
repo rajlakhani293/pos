@@ -1,14 +1,15 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { createBaseQueryWithInterceptor } from "./base";
-import { createMutation, deleteMutation, getMutation, postMutation, putMutation } from "./apiUtils";
+import { createMutation, getMutation, postMutation, putMutation } from "./apiUtils";
 
 const endpointsConfig = {
   // Sales Endpoints
   getSalesData: { query: postMutation("get-transactions") },
   createSale: { query: createMutation("") },
   editSale: { query: ({ id, payLoad }: { id: any; payLoad: any }) => putMutation(`${id}`, payLoad) },
-  deleteSale: { query: deleteMutation("delete") },
   getSaleById: { query: ({ id }: { id: number }) => getMutation(`${id}`) },
+  createSaleReturn: { query: ({ id, payLoad }: { id: number; payLoad: any }) => createMutation(`${id}/returns`)(payLoad) },
+  revertSale: { query: ({ id, payLoad }: { id: number; payLoad: any }) => createMutation(`${id}/revert`)(payLoad) },
 }
 
 export const sales = createApi({

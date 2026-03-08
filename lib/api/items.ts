@@ -10,6 +10,7 @@ const endpointsConfig = {
   editItem: { query: ({ id, payLoad }: { id: any; payLoad: any }) => putMutation(`${id}`, payLoad) },
   deleteItem: { query: deleteMutation("delete") },
   getItemById: { query: ({ id }: { id: number }) => getMutation(`${id}`) },
+  adjustItemStock: { query: createMutation("stock/adjust") },
 
   // Item Category Endpoints
   getItemCategoriesDropdown: { query: () => getMutation("categories/dropdown-list") },

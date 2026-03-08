@@ -206,8 +206,6 @@ export default function ItemPage() {
 
 
   const handleSubmit = async (e: React.FormEvent) => {
-    console.log("save");
-
     e.preventDefault();
     setIsSubmitting(true);
 
@@ -227,6 +225,7 @@ export default function ItemPage() {
         // Append regular form fields
         Object.entries(formData).forEach(([key, value]) => {
           if (['item_images_metadata', 'item_images_files', 'front_images', 'rear_images', 'other_images'].includes(key)) return;
+          if (isEdit && key === 'opening_stock') return;
           if (value !== null && value !== undefined) {
             formDataPayload.append(key, value.toString());
           }
@@ -270,6 +269,8 @@ export default function ItemPage() {
           ...baseValues,
           category_id: data.category?.toString() || "",
           primary_unit_id: data.primary_unit?.toString() || "",
+          current_stock: data.current_stock ?? "0.00",
+          opening_stock: data.opening_stock ?? "0.00",
           item_images_metadata: data.item_images || [],
           item_images_files: {}
         });
@@ -372,16 +373,17 @@ export default function ItemPage() {
   }
 
   return (
-    <div className=" bg-white flex flex-col h-full overflow-hidden">
+    <div className="bg-white flex flex-col h-full">
       {/* Form */}
-      <div className="px-4 py-2 border-b border-gray-200 bg-white z-10 flex-none">
-        <div className="flex items-center gap-3">
-          <button className="flex items-center text-sm text-gray-600 hover:text-gray-900 cursor-pointer border p-2 rounded-lg hover:bg-gray-50" onClick={() => router.push('/inventory/items')}>
+      <div className="px-6 py-2 border-b border-gray-200 bg-white z-20 flex-none">
+        <div className="flex items-center gap-4">
+          <button className="flex items-center border border-gray-200 rounded-lg p-2 hover:bg-gray-50 text-sm text-gray-600 hover:text-gray-900 hover:cursor-pointer" onClick={() => router.push('/inventory/items')}>
             <LeftIcon className="size-4" />
           </button>
           <h1 className="text-xl font-bold text-gray-900">{isEdit ? 'Edit Item' : 'Create Item'}</h1>
         </div>
       </div>
+
       <div ref={contentRef} className="px-6 pt-6 overflow-y-auto flex-1 custom-scrollbar">
         <form onSubmit={handleSubmit} noValidate className="space-y-6">
           {/* Multi-column Layout */}
@@ -455,7 +457,7 @@ export default function ItemPage() {
               <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Inventory & Compliance</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {Schema.filter(field => ['opening_stock', 'primary_unit_id', 'min_stock_level', 'item_weight'].includes(field.name)).map((field) => (
+                  {Schema.filter(field => ['primary_unit_id', 'item_weight', ...(isEdit ? [] : ['opening_stock'])].includes(field.name)).map((field) => (
                     <div key={field.name}>
                       {field.type === "select" ? (
                         <UniFieldSelect
@@ -545,7 +547,7 @@ export default function ItemPage() {
           <div ref={paginationSentinelRef} className="h-px w-full" />
 
           {/* Form Actions */}
-          <footer className={`mt-4 sticky z-10 transition-all duration-300 ease-in-out ${isFooterStuck ? "mx-6 bottom-5" : "mx-0 bottom-0"}`}>
+          <footer className={`mt-4 sticky z-50 transition-all duration-300 ease-in-out ${isFooterStuck ? "mx-6 bottom-5" : "mx-0 bottom-0"}`}>
             <div className={`flex items-center justify-end gap-x-2 rounded-b-xl p-3 bg-white/90 backdrop-blur-md transition-shadow duration-200 ${isFooterStuck ? "rounded-t-xl shadow-lg border border-gray-200/80" : "rounded-t-none shadow-none border-t-2 border-gray-100"}`}>
               <Button
                 type="button"
