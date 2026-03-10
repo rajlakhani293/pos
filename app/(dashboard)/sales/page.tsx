@@ -5,6 +5,8 @@ import { useTableData } from "@/hooks/useTableData";
 import DynamicTable from "@/components/DynamicTable";
 import { sales } from "@/lib/api/sales";
 import { useRouter } from "next/navigation";
+import { MdOutlineSettingsBackupRestore } from "react-icons/md";
+import dayjs from "dayjs";
 
 const Sales = () => {
   const router = useRouter();
@@ -40,10 +42,6 @@ const Sales = () => {
     router.push('/sales/create');
   };
 
-  const handleEditSale = (sale: any) => {
-    router.push(`/sales/${sale.id}`);
-  };
-
   const columns = useMemo(
     () => [
       {
@@ -57,21 +55,29 @@ const Sales = () => {
       {
         key: "sales_date",
         title: "Sales Date",
+        render: (value: string) => dayjs(value).format("DD MMM YYYY, hh:mm A"),  
       },
       {
         key: "total_amount",
         title: "Total Amount"
       },
       {
-        key: "paid_amount",
-        title: "Paid Amount",
-      },
-      {
         key: "payment_mode",
         title: "Payment Mode",
-        render: (value: any) => {
+        render: (value: any, record: any) => {
           const paymentMode = PAYMENT_MODE_CHOICES.find(mode => mode.value === value);
-          return paymentMode ? paymentMode.label : value;
+          const modeLabel = paymentMode ? paymentMode.label : value;
+          
+          if (value === 3) { // Partial payment mode
+            return (
+              <div>
+                <div>{modeLabel}</div>
+                <div className="text-sm text-muted-foreground">Paid: {record?.row?.paid_amount}</div>
+              </div>
+            );
+          }
+          
+          return modeLabel;
         }
       }
     ],
@@ -99,8 +105,22 @@ const Sales = () => {
         totalItems={totalItems}
         onPageChange={setCurrentPage}
         showDelete={false}
+        showEdit={false}
         isLoading={isLoading}
-        onEdit={handleEditSale}
+        rowActions={(id) => {
+          return [
+            {
+              key: "return",
+              label: "Return",
+              labelText: "Return",
+              icon: <MdOutlineSettingsBackupRestore className="size-5" />,
+              onClick: () => {
+                router.push(`/sales/${id}`);
+              },
+              priority: 1
+            }
+          ];
+        }}
       />
   );
 };

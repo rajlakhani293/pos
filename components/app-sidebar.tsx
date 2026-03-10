@@ -43,7 +43,7 @@ export const navData = [
         },
         {
           title: "Stock Adjustments",
-          url: "/inventory/stock",
+          url: "/inventory/stock-adjustments",
         },
       ],
     },

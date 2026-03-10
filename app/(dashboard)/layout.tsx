@@ -19,6 +19,7 @@ export default function DashboardLayout({
 
   const noPaddingPages = {
     "/sales/create": pathname?.startsWith("/sales/create"),
+    "/sales/": pathname?.startsWith("/sales/") && /\d+$/.test(pathname || ""),
     "/inventory/items/create": pathname?.startsWith("/inventory/items/create"),
     "/inventory/items/": pathname?.startsWith("/inventory/items/") && /\d+$/.test(pathname || ""),
     isSettingsPage,
@@ -81,7 +82,7 @@ export default function DashboardLayout({
             tabs={getModuleTabs(pathname)}
             activeHref={pathname}
           />
-          <main className={`flex-1 overflow-y-auto bg-white ${shouldHaveNoPadding ? "" : "p-4"}`}>
+          <main className={`flex-1 overflow-y-auto bg-white ${shouldHaveNoPadding ? "" : "p-6"}`}>
             {children}
           </main>
         </div>

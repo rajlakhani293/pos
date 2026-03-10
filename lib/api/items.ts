@@ -11,6 +11,7 @@ const endpointsConfig = {
   deleteItem: { query: deleteMutation("delete") },
   getItemById: { query: ({ id }: { id: number }) => getMutation(`${id}`) },
   adjustItemStock: { query: createMutation("stock/adjust") },
+  getStockTransactions: { query: postMutation("stock/get-transactions") },
 
   // Item Category Endpoints
   getItemCategoriesDropdown: { query: () => getMutation("categories/dropdown-list") },
