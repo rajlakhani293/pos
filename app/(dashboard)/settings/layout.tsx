@@ -1,9 +1,12 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
+import React from "react"
 import { cn } from "@/lib/utils"
 import { PersonPlusIcon, TagIcon, TaxIcon } from "@/components/AppIcon"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Card, CardContent } from "@/components/ui/card"
 
 const data = {
   navMain: [
@@ -21,7 +24,12 @@ const data = {
       title: "Parties", 
       url: "/settings/parties",
       icon: PersonPlusIcon
-    }
+    },
+    {
+      title: "Customer Ledger", 
+      url: "/settings/ledger",
+      icon: PersonPlusIcon
+    },
   ]
 }
 
@@ -31,43 +39,47 @@ export default function SettingsLayout({
   children: React.ReactNode
 }) {
   const pathname = usePathname()
+  const router = useRouter()
+
+  const activeTab = React.useMemo(() => {
+    const matches = data.navMain.filter((item) => pathname.startsWith(item.url))
+    if (!matches.length) return data.navMain[0]?.url
+    return matches.sort((a, b) => b.url.length - a.url.length)[0].url
+  }, [pathname])
 
   return (
-    <div className="flex h-full">
-      {/* Settings Sidebar */}
-      <aside className="w-64 border-r bg-white">
-        <div className="p-3 border-b">
-          <h2 className="text-xl font-bold text-gray-900">Settings</h2>
-        </div>
-        
-        <nav className="px-4 py-2">
-          <div className="space-y-1">
+    <div className="flex h-full flex-col bg-white">
+     <div className="border-b border-slate-200 px-8 py-6 flex flex-col gap-2">
+       <div className="">
+        <h2 className="text-2xl font-semibold text-slate-900">Settings</h2>
+      </div>
+
+      <div className="">
+        <Tabs value={activeTab} orientation="horizontal" className="gap-0 w-full">
+          <TabsList className="w-fit">
             {data.navMain.map((item) => {
-              const isActive = pathname === item.url
               const Icon = item.icon
-              
               return (
-                <Link
+                <TabsTrigger
                   key={item.url}
-                  href={item.url}
+                  value={item.url}
+                  onClick={() => router.push(item.url)}
                   className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                    isActive 
-                      ? "bg-blue-300/20" 
-                      : "hover:bg-gray-100"
+                    "justify-start px-3 py-1 text-sm font-medium text-slate-600",
+                    "data-[state=active]:text-slate-900"
                   )}
                 >
-                  <Icon className="h-4 w-4" />
+                  <Icon className="h-4 w-4 text-current" />
                   {item.title}
-                </Link>
+                </TabsTrigger>
               )
             })}
-          </div>
-        </nav>
-      </aside>
+          </TabsList>
+        </Tabs>
+      </div>
+     </div>
 
-      {/* Main Content */}
-      <main className="flex-1 overflow-y-auto p-8 bg-white">
+      <main className="flex-1 overflow-y-auto px-8 py-6">
         {children}
       </main>
     </div>

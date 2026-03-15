@@ -147,6 +147,7 @@ export function MultipleImageUpload({
       const front: ImageFile[] = [];
       const rear: ImageFile[] = [];
       const other: ImageFile[] = [];
+      let hasPrimaryImage = false;
 
       initialImages.forEach((img: any) => {
         const imageFile: ImageFile = {
@@ -154,6 +155,10 @@ export function MultipleImageUpload({
           preview: img.url,
           isPrimary: img.is_primary
         };
+
+        if (img.is_primary) {
+          hasPrimaryImage = true;
+        }
 
         if (img.sort_order === 0) {
           front.push(imageFile);
@@ -163,6 +168,11 @@ export function MultipleImageUpload({
           other.push(imageFile);
         }
       });
+
+      // If no primary image exists, make the first front image primary
+      if (!hasPrimaryImage && front.length > 0) {
+        front[0].isPrimary = true;
+      }
 
       setFrontImagesState(front);
       setRearImagesState(rear);
@@ -213,12 +223,15 @@ export function MultipleImageUpload({
     });
 
     if (validFiles.length > 0) {
+      // Check if current front image is primary and preserve that status
+      const isCurrentPrimary = frontImagesState.length > 0 && frontImagesState[0].isPrimary;
       const hasPrimary = checkHasPrimary();
+      
       const newImages: ImageFile[] = validFiles.map((file, idx) => ({
         id: Math.random().toString(36).substr(2, 9),
         file,
         preview: URL.createObjectURL(file),
-        isPrimary: !hasPrimary && idx === 0
+        isPrimary: isCurrentPrimary || (!hasPrimary && idx === 0)
       }));
 
       setFrontImagesState(newImages);
@@ -327,12 +340,15 @@ export function MultipleImageUpload({
     });
 
     if (validFiles.length > 0) {
+      // Check if current rear image is primary and preserve that status
+      const isCurrentPrimary = rearImagesState.length > 0 && rearImagesState[0].isPrimary;
       const hasPrimary = checkHasPrimary();
+      
       const newImages: ImageFile[] = validFiles.map((file, idx) => ({
         id: Math.random().toString(36).substr(2, 9),
         file,
         preview: URL.createObjectURL(file),
-        isPrimary: !hasPrimary && idx === 0
+        isPrimary: isCurrentPrimary || (!hasPrimary && idx === 0)
       }));
 
       setRearImagesState(newImages);
@@ -528,6 +544,12 @@ export function MultipleImageUpload({
     const targetType = type || previewModal.type;
     const targetId = id || (previewModal.images[previewModal.currentIndex]?.id);
 
+    // Prevent changing primary from front image - first image should always remain primary
+    if (targetType !== 'front' && frontImagesState.length > 0 && frontImagesState[0].isPrimary) {
+      // Don't allow changing primary if front image exists and is already primary
+      return;
+    }
+
     const newFront = frontImagesState.map(img => ({ ...img, isPrimary: targetType === 'front' }));
     const newRear = rearImagesState.map(img => ({ ...img, isPrimary: targetType === 'rear' }));
     
@@ -629,7 +651,8 @@ export function MultipleImageUpload({
                       e.stopPropagation();
                       handleSetAsPrimary('front');
                     }}
-                    className={`size-6 p-0 rounded-sm ${frontImagesState[0].isPrimary ? 'bg-blue-600 hover:bg-blue-700' : ''}`}
+                    disabled={frontImagesState[0].isPrimary}
+                    className={`size-6 p-0 rounded-sm ${frontImagesState[0].isPrimary ? 'bg-blue-600 hover:bg-blue-700 cursor-not-allowed' : ''}`}
                   >
                     <BadgeCheckIcon className="size-4" />
                   </Button>
@@ -930,7 +953,7 @@ export function MultipleImageUpload({
                   type="button"
                   variant="outline"
                   onClick={() => handleSetAsPrimary()}
-                  disabled={previewModal.images[previewModal.currentIndex]?.isPrimary}
+                  disabled={previewModal.images[previewModal.currentIndex]?.isPrimary || (frontImagesState.length > 0 && frontImagesState[0].isPrimary)}
                 >
                   {previewModal.images[previewModal.currentIndex]?.isPrimary ? 'Primary' : 'Set as Primary'}
                 </Button>

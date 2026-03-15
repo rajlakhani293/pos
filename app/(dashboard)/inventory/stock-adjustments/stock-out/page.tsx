@@ -7,6 +7,23 @@ import { useTableData } from "@/hooks/useTableData";
 import DynamicTable from "@/components/DynamicTable";
 import StockForm from "../../../../../components/StockForm";
 
+const MOVEMENT_LABELS: Record<string, string> = {
+  OPENING_STOCK: "Opening Stock",
+  PURCHASE: "Purchase",
+  SALES_RETURN: "Sales Return",
+  TRANSFER_IN: "Transfer In",
+  ADJUSTMENT_IN: "Adjustment In",
+  SALE: "Sale",
+  PURCHASE_RETURN: "Purchase Return",
+  TRANSFER_OUT: "Transfer Out",
+  DAMAGE: "Damage",
+  ADJUSTMENT_OUT: "Adjustment Out",
+  SAMPLE_GIVEN: "Sample Given",
+  INTERNAL_USE: "Internal Use",
+  THEFT_LOSS: "Theft / Loss",
+  DAMAGE_EXPIRED: "Damage / Expired",
+};
+
 export default function StockOutPage() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [showForm, setShowForm] = useState(false);
@@ -47,7 +64,11 @@ export default function StockOutPage() {
         render: (value: string) => dayjs(value).format("DD MMM YYYY, hh:mm A"),
       },
       { key: "item_name", title: "Item" },
-      { key: "movement_type", title: "Type" },
+      {
+        key: "movement_type",
+        title: "Type",
+        render: (value: string) => MOVEMENT_LABELS[value] || value,
+      },
       { key: "direction", title: "Direction" },
       { key: "quantity", title: "Qty" },
       { key: "balance_after", title: "Balance" },

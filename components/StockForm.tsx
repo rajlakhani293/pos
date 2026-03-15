@@ -10,15 +10,22 @@ type ItemOption = { label: string; value: number; current_stock: number };
 type DropdownItem = { id: number; item_name: string; item_code: string; current_stock?: number };
 
 const stockInTypes = [
-  { label: "New Stock", value: "NEW_STOCK" },
-  { label: "Return Stock", value: "RETURN_STOCK" },
+  { label: "Purchase", value: "PURCHASE" },
+  { label: "Sales Return", value: "SALES_RETURN" },
+  { label: "Transfer In", value: "TRANSFER_IN" },
   { label: "Adjustment In", value: "ADJUSTMENT_IN" },
 ];
 
 const stockOutTypes = [
-  { label: "Damaged Stock", value: "DAMAGED_STOCK" },
-  { label: "Used Stock", value: "USED_STOCK" },
+  { label: "Sale", value: "SALE" },
+  { label: "Purchase Return", value: "PURCHASE_RETURN" },
+  { label: "Transfer Out", value: "TRANSFER_OUT" },
+  { label: "Damage", value: "DAMAGE" },
   { label: "Adjustment Out", value: "ADJUSTMENT_OUT" },
+  { label: "Sample Given", value: "SAMPLE_GIVEN" },
+  { label: "Internal Use", value: "INTERNAL_USE" },
+  { label: "Theft / Loss", value: "THEFT_LOSS" },
+  { label: "Damage / Expired", value: "DAMAGE_EXPIRED" },
 ];
 
 type Props = {
@@ -118,7 +125,7 @@ export default function StockForm({ isOpen, onClose, onSuccess, type, title }: P
       const result = await adjustItemStock({
         item_id: Number(values.item_id),
         movement_type: values.movement_type,
-        quantity: type === "IN" ? qty : -qty, // Negative for OUT
+        quantity: qty,
         note: values.note || undefined,
         reference_type: "MANUAL",
       }).unwrap() as { message?: string };

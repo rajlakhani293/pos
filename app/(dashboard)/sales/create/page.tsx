@@ -97,13 +97,6 @@ export default function CreateSalePage() {
       addNewLabel: "Add New Party",
     },
     {
-      name: "sales_date",
-      label: "Sales Date",
-      type: "date",
-      placeholder: "Select Date",
-      required: true
-    },
-    {
       name: "discount_value",
       label: "Discount",
       type: "number",
@@ -144,14 +137,13 @@ export default function CreateSalePage() {
 
   const [formData, setFormData] = useState<any>(() => ({
     ...getInitialFormValues(SalesSchema),
-    sales_date: new Date().toISOString().split('T')[0],
     subtotal: "",
     tax_amount: "",
     discount_percentage: "",
     discount_amount: "",
     discount_value: "",
     total_amount: "",
-    paid_amount: "",
+    paid_amount: "0",
     payment_mode: "1",
     transactions: []
   }));
@@ -293,9 +285,9 @@ export default function CreateSalePage() {
         newErrors.party_id = "Party is required for partial payment";
       }
       
-      // Validate paid amount is required and greater than 0 for partial payment
-      if (!formData.paid_amount || parseFloat(formData.paid_amount) <= 0) {
-        newErrors.paid_amount = "Paid amount must be greater than 0 for partial payment";
+      const paidValue = parseFloat(formData.paid_amount || "0");
+      if (isNaN(paidValue) || paidValue < 0) {
+        newErrors.paid_amount = "Paid amount must be 0 or greater for partial payment";
       }
     }
 
@@ -345,7 +337,7 @@ export default function CreateSalePage() {
           discount_percentage: discountType === "percentage" ? parseFloat(formData.discount_value || "0") : 0,
           discount_amount: parseFloat(formData.discount_amount || "0"),
           total_amount: parseFloat(formData.total_amount),
-          paid_amount: parseFloat(formData.paid_amount),
+          paid_amount: formData.payment_mode === "3" ? parseFloat(formData.paid_amount || "0") : 0,
           payment_mode: parseInt(formData.payment_mode),
           transactions: formData.transactions.map((t: any) => ({
             ...t,
@@ -371,6 +363,10 @@ export default function CreateSalePage() {
       setIsSubmitting(false);
     }
   };
+
+  const totalValue = parseFloat(formData.total_amount || "0") || 0;
+  const paidValue = parseFloat(formData.paid_amount || "0") || 0;
+  const balanceValue = Math.max(0, totalValue - paidValue);
 
   const setItemsFromApiResponse = (itemsResult: any, categoryId?: string) => {
     const uniqueItems = new Map();
@@ -628,6 +624,32 @@ export default function CreateSalePage() {
 
             <div className="space-y-4 flex-2 min-w-0 p-4">
 
+              {/* Party Section - Moved above Cart */}
+              <div className="bg-white">
+                <div className="space-y-4">
+                  {SalesSchema.filter(field => field.name === "party_id").map((field) => (
+                    <div key={field.name}>
+                      <UniFieldSelect
+                        label={field.label}
+                        value={formData[field.name] || ''}
+                        onValueChange={(value) => handleChange(field.name, value)}
+                        placeholder={field.placeholder || `Select ${field.label}`}
+                        required={field.required || formData.payment_mode === "3"}
+                        error={errors[field.name]}
+                        onAddNew={field.onAddNew}
+                        addNewLabel={field.addNewLabel}
+                      >
+                        {field.options?.filter(option => option != null && option.value != null).map((option) => (
+                          <SelectItem key={option.value} value={option.value.toString()}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </UniFieldSelect>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               <div className="bg-white">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-lg font-semibold text-gray-900">Cart</h3>
@@ -653,7 +675,7 @@ export default function CreateSalePage() {
                       {formData.transactions.length === 0 ? (
                         <tr>
                           <td colSpan={4} className="px-3 py-8 text-center text-gray-500 italic">
-                            Add items from the catalog.
+                            Add items from catalog.
                           </td>
                         </tr>
                       ) : (
@@ -735,7 +757,6 @@ export default function CreateSalePage() {
                     placeholder="0.00"
                     value={formData.paid_amount || ""}
                     onChange={(e) => handleChange("paid_amount", e.target.value)}
-                    required
                     min={0}
                     step={0.01}
                     error={errors.paid_amount}
@@ -745,41 +766,22 @@ export default function CreateSalePage() {
 
               <div className="bg-white">
                 <div className="space-y-4">
-                  {SalesSchema.filter(field => ["party_id", "sales_date", "notes"].includes(field.name)).map((field) => (
+                  {SalesSchema.filter(field => ["notes"].includes(field.name)).map((field) => (
                     <div key={field.name}>
-                      {field.name === "party_id" ? (
-                        <UniFieldSelect
-                          label={field.label}
-                          value={formData[field.name] || ''}
-                          onValueChange={(value) => handleChange(field.name, value)}
-                          placeholder={field.placeholder || `Select ${field.label}`}
-                          required={field.required || formData.payment_mode === "3"}
-                          error={errors[field.name]}
-                          onAddNew={field.onAddNew}
-                          addNewLabel={field.addNewLabel}
-                        >
-                          {field.options?.filter(option => option != null && option.value != null).map((option) => (
-                            <SelectItem key={option.value} value={option.value.toString()}>
-                              {option.label}
-                            </SelectItem>
-                          ))}
-                        </UniFieldSelect>
-                      ) : (
-                        <UniFieldInput
-                          label={field.label}
-                          type={field.type}
-                          placeholder={field.placeholder}
-                          value={formData[field.name] || ""}
-                          onChange={(e) => handleChange(field.name, e.target.value)}
-                          required={field.required}
-                          min={field.min}
-                          step={field.step}
-                          error={errors[field.name]}
-                          disabled={field.disabled}
-                          as={field.type === "textarea" ? "textarea" : "input"}
-                          rows={field.rows || 3}
-                        />
-                      )}
+                      <UniFieldInput
+                        label={field.label}
+                        type={field.type}
+                        placeholder={field.placeholder}
+                        value={formData[field.name] || ""}
+                        onChange={(e) => handleChange(field.name, e.target.value)}
+                        required={field.required}
+                        min={field.min}
+                        step={field.step}
+                        error={errors[field.name]}
+                        disabled={field.disabled}
+                        as={field.type === "textarea" ? "textarea" : "input"}
+                        rows={field.rows || 3}
+                      />
                     </div>
                   ))}
                 </div>
@@ -852,8 +854,8 @@ export default function CreateSalePage() {
                 {formData.payment_mode === "3" && (
                   <div className="flex items-center justify-between text-sm">
                     <p className="text-gray-600">Balance</p>
-                    <p className={`font-bold ${(parseFloat(formData.total_amount) - parseFloat(formData.paid_amount)) > 0 ? "text-red-500" : "text-green-600"}`}>
-                      ₹{(parseFloat(formData.total_amount) - parseFloat(formData.paid_amount)).toFixed(2)}
+                    <p className={`font-bold ${balanceValue > 0 ? "text-red-500" : "text-green-600"}`}>
+                      ₹{balanceValue.toFixed(2)}
                     </p>
                   </div>
                 )}

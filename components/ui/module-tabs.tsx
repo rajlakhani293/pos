@@ -22,6 +22,14 @@ export const ModuleTabs: React.FC<ModuleTabsProps> = ({
 }) => {
   if (tabs.length <= 1) return null;
 
+  let activeTabHref: string | null = null;
+  if (activeHref) {
+    const matches = tabs
+      .filter((tab) => activeHref === tab.href || activeHref.startsWith(tab.href))
+      .sort((a, b) => b.href.length - a.href.length);
+    activeTabHref = matches.length ? matches[0].href : null;
+  }
+
   return (
     <div className={twMerge(
       "border-b border-gray-200 bg-white",
@@ -29,8 +37,7 @@ export const ModuleTabs: React.FC<ModuleTabsProps> = ({
     )}>
       <div className="flex gap-1 px-6 overflow-x-auto">
         {tabs.map((tab) => {
-          const isActive = activeHref === tab.href || 
-            (activeHref && activeHref.startsWith(tab.href) && tab.href !== "/");
+          const isActive = activeTabHref === tab.href;
           
           return (
             <Link

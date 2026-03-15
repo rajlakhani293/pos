@@ -5,11 +5,17 @@ import { createMutation, getMutation, postMutation, putMutation } from "./apiUti
 const endpointsConfig = {
   // Sales Endpoints
   getSalesData: { query: postMutation("get-transactions") },
+  getLedgerTransactions: { query: postMutation("ledger/get-transactions") },
+  getLedgerPayments: { query: postMutation("ledger/get-payments") },
+  getPartyCreditSummary: { query: postMutation("party-credit-summary") },
+  getPartyCreditDays: { query: ({ id, payLoad }: { id: number; payLoad: any }) => postMutation(`party-credit-summary/${id}`)(payLoad) },
+  getDashboardStats: { query: postMutation("dashboard-stats") },
+  getDashboardCharts: { query: postMutation("dashboard-charts") },
+  getDashboardTopProducts: { query: postMutation("dashboard-top-products") },
   createSale: { query: createMutation("") },
   editSale: { query: ({ id, payLoad }: { id: any; payLoad: any }) => putMutation(`${id}`, payLoad) },
   getSaleById: { query: ({ id }: { id: number }) => getMutation(`${id}`) },
-  createSaleReturn: { query: ({ id, payLoad }: { id: number; payLoad: any }) => createMutation(`${id}/returns`)(payLoad) },
-  revertSale: { query: ({ id, payLoad }: { id: number; payLoad: any }) => createMutation(`${id}/revert`)(payLoad) },
+  fullReturnSale: { query: ({ id, payLoad }: { id: number; payLoad: any }) => createMutation(`${id}/returns`)(payLoad) },
 }
 
 export const sales = createApi({

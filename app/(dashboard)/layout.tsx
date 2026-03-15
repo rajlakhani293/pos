@@ -52,7 +52,10 @@ export default function DashboardLayout({
 
     const currentModule = navData.find(item => {
       if (item.items) {
-        return item.items.some(subItem => pathname.startsWith(subItem.url));
+        const matches = item.items.filter(subItem => pathname.startsWith(subItem.url));
+        if (!matches.length) return false;
+        const best = matches.sort((a, b) => b.url.length - a.url.length)[0];
+        return Boolean(best);
       }
       return pathname.startsWith(item.url);
     });

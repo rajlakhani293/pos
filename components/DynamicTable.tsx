@@ -145,6 +145,7 @@ interface DynamicTableProps {
   sortConfig?: { key: string; direction: string };
   onSort?: (key: string) => void;
   rowActions?: (id: string, record: any) => Action[];
+  isRowDisabled?: (row: any) => boolean;
   onFilterChange?: (action: string, payload?: any) => void;
   currentPage?: number;
   itemsPerPage?: number;
@@ -184,6 +185,7 @@ const DynamicTable = ({
   sortConfig = { key: "", direction: "ascending" },
   onSort = () => { },
   rowActions,
+  isRowDisabled,
   currentPage = 1,
   itemsPerPage = 10,
   totalItems = 0,
@@ -338,8 +340,6 @@ const DynamicTable = ({
           e?.stopPropagation();
           if (onEdit) {
             onEdit(currentItem);
-          } else {
-            console.log("Edit item:", id, currentItem);
           }
         },
         priority: 1
@@ -683,7 +683,7 @@ const DynamicTable = ({
             </TableHeader>
             <TableBody className={cn(data?.length === 0 && "h-full")}>
               {isLoading ? (
-                <TableRow>
+                <TableRow key="loading">
                   <TableCell
                     colSpan={columns.length + (hideActions ? 0 : 1) + 1}
                     className="h-24 text-center"
@@ -696,14 +696,14 @@ const DynamicTable = ({
                 </TableRow>
               ) : data?.length > 0 ? (
                 data.map((row, index) => {
-                  const isDisabledRow = false; // Add logic if needed
+                  const isDisabledRow = isRowDisabled ? isRowDisabled(row) : false;
                   const allActions = getRowActions(row.id);
                   const visibleActions = allActions.slice(0, MAX_ICONS_TO_SHOW);
                   const dropdownActions = allActions.slice(MAX_ICONS_TO_SHOW);
 
                   return (
                     <TableRow
-                      key={row.id}
+                      key={row.id || `row-${index}`}
                       onClick={() => onRowClick?.(row)}
                       data-state={selectedRows.includes(String(row.id)) ? "selected" : undefined}
                       className={cn(
@@ -712,7 +712,7 @@ const DynamicTable = ({
                         onRowClick && "cursor-pointer"
                       )}
                     >
-                      <TableCell className="py-3 text-center">
+                      <TableCell key={`row-number-${row.id || index}`} className="py-3 text-center">
                         <TableCellContent value={(currentPage - 1) * itemsPerPage + index + 1} />
                       </TableCell>
                       {columns.map((col) => {
@@ -730,7 +730,7 @@ const DynamicTable = ({
 
                         return (
                           <TableCell
-                            key={col.key}
+                            key={`${col.key}-${row.id || index}`}
                             className={cn("py-3", isDisabledRow && "text-muted-foreground")}
                           >
                             <TableCellContent value={rawValue} />
@@ -738,7 +738,7 @@ const DynamicTable = ({
                         );
                       })}
                       {!hideActions && (
-                        <TableCell className="px-4 py-3">
+                        <TableCell key={`actions-${row.id || index}`} className="px-4 py-3">
                           <div className="flex items-center justify-end gap-2 relative">
                             {visibleActions.map(({ key, icon, labelText, onClick, render }) => (
                               render ? (
@@ -798,7 +798,7 @@ const DynamicTable = ({
                   );
                 })
               ) : (
-                <TableRow className="h-full">
+                <TableRow key="no-data" className="h-full">
                   <TableCell
                     colSpan={columns.length + (hideActions ? 0 : 1) + 1}
                     className="h-full text-center align-middle"
