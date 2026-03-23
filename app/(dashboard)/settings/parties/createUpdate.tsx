@@ -60,6 +60,7 @@ export function PartyForm({
     placeholder: "e.g. 1234567890",
     required: true,
     type: "number",
+    maxLength: 10
   },
   { 
     name: "customer_category", 
@@ -115,6 +116,7 @@ export function PartyForm({
     label: "Pincode", 
     placeholder: "e.g. 560001", 
     type: "number",
+    maxLength: 6
   },
 ];
 
@@ -143,14 +145,9 @@ export function PartyForm({
         resetForm();
         onClose?.();
         onSuccess?.();
-      } else {
-        showToast.error(result);
       }
-
       return result;
     } catch (error: any) {
-      showToast.error(error);
-      console.error("Submit failed:", error);
       return error;
     }
   };

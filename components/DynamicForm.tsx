@@ -264,11 +264,19 @@ const DynamicForm = <T extends Record<string, any>>({
                     type="number"
                     label={field.label}
                     value={formData[field.name] || ''}
-                    onChange={(e) => handleChange(field.name, e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      // Enforce maxLength for number inputs
+                      if (field.maxLength && value.length > field.maxLength) {
+                        return; // Prevent input if exceeds maxLength
+                      }
+                      handleChange(field.name, value);
+                    }}
                     required={field.required}
                     placeholder={field.placeholder}
                     min="0"
                     step="0.01"
+                    maxLength={field.maxLength}
                     error={errors[field.name]}
                   />
                 ) : field.type === "readonly" ? (

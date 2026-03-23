@@ -83,7 +83,15 @@ const Parties = () => {
           };
           return customerCategory[value.toString()] || value;
         }
-      } 
+      },
+      {
+        key: "wallet_balance",
+        title: "Wallet Balance",
+      },
+      {
+        key: "current_balance",
+        title: "Current Balance",
+      },
     ],
     [currentPage, itemsPerPage]
   );

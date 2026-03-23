@@ -1,12 +1,10 @@
 "use client"
 
-import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import React from "react"
 import { cn } from "@/lib/utils"
 import { PersonPlusIcon, TagIcon, TaxIcon } from "@/components/AppIcon"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Card, CardContent } from "@/components/ui/card"
 
 const data = {
   navMain: [

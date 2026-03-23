@@ -9,6 +9,7 @@ import { MdOutlineSettingsBackupRestore } from "react-icons/md";
 import dayjs from "dayjs";
 import { showToast } from "@/lib/toast";
 import { Button } from "@/components/ui/button";
+import CustomDrawer from "@/components/CustomDrawer";
 import {
   Dialog,
   DialogContent,
@@ -18,6 +19,93 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Edit } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+
+type InvoiceTransaction = {
+  id: number;
+  item_id: number;
+  item__item_code?: string;
+  item__item_name?: string;
+  item__primary_unit__short_name?: string;
+  item_quantity: number | string;
+  returned_quantity?: number | string;
+  item_rate: number | string;
+  total_amount: number | string;
+  item_description?: string;
+  discount_percentage?: number | string;
+  discount_amount?: number | string;
+  tax_amount?: number | string;
+};
+
+type InvoiceReturnLine = {
+  id: number;
+  sales_transaction_id: number;
+  item_id: number;
+  item_name?: string;
+  return_quantity: number | string;
+  item_rate: number | string;
+  total_amount: number | string;
+};
+
+type InvoiceReturn = {
+  id: number;
+  return_code?: string;
+  return_date?: string;
+  total_return_amount?: number | string;
+  notes?: string;
+  transactions: InvoiceReturnLine[];
+};
+
+type SalesInvoiceData = {
+  sales: {
+    id: number;
+    sales_code?: string;
+    created_at?: string;
+    subtotal?: number | string;
+    tax_amount?: number | string;
+    discount_percentage?: number | string;
+    discount_amount?: number | string;
+    total_amount?: number | string;
+    paid_amount?: number | string;
+    balance_amount?: number | string;
+    payment_mode?: number | string;
+    payment_mode_label?: string;
+    notes?: string;
+    is_reverted?: boolean;
+  };
+  party?: {
+    id?: number;
+    name?: string;
+    phone_number?: string;
+    email?: string;
+    address?: string;
+    pincode?: string;
+    city?: string;
+    state?: string;
+    country?: string;
+  };
+  shop?: {
+    id?: number;
+    shop_name?: string;
+    legal_name?: string;
+    phone_number?: string;
+    email?: string;
+    address?: string;
+    pincode?: string;
+    city?: string;
+    state?: string;
+    country?: string;
+    tax_no?: string;
+    pan_no?: string;
+    logo_image?: string;
+    website_url?: string;
+  };
+  transactions: InvoiceTransaction[];
+  returns: InvoiceReturn[];
+};
+
+const toNumber = (value: number | string | undefined | null) => Number(value || 0);
+const formatMoney = (value: number | string | undefined | null) => `₹${toNumber(value).toFixed(2)}`;
 
 const Sales = () => {
   const router = useRouter();
@@ -25,7 +113,10 @@ const Sales = () => {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [selectedSale, setSelectedSale] = useState<{ id: number | string; sales_code?: string } | null>(null);
   const [fullReturnSale, { isLoading: isReverting }] = sales.useFullReturnSaleMutation();
-  
+  const [getSalesView] = sales.useGetSalesViewMutation();
+  const [invoiceOpen, setInvoiceOpen] = useState(false);
+  const [invoiceData, setInvoiceData] = useState<SalesInvoiceData | null>(null);
+
   // Payment mode choices mapping
   const PAYMENT_MODE_CHOICES = [
     { value: 1, label: 'Cash' },
@@ -57,6 +148,20 @@ const Sales = () => {
   const handleCreateSale = () => {
     router.push('/sales/create');
   };
+
+  const handleRowClick = useCallback(async (record: any) => {
+    if (!record?.id) return;
+    setInvoiceOpen(true);
+    setInvoiceData(null);
+    try {
+      const result = await getSalesView({ id: Number(record.id) }).unwrap() as { data?: SalesInvoiceData };
+      setInvoiceData(result?.data || null);
+    } catch (error: any) {
+      const errorData = error?.data;
+      showToast.error(errorData?.message || "Failed to load sales invoice");
+    } finally {
+    }
+  }, [getSalesView]);
 
   const openFullReturnConfirm = (record: any) => {
     if (record?.is_reverted) {
@@ -129,7 +234,7 @@ const Sales = () => {
         render: (value: any, record: any) => {
           const paymentMode = PAYMENT_MODE_CHOICES.find(mode => mode.value === value);
           const modeLabel = paymentMode ? paymentMode.label : value;
-          
+
           if (value === 3) { // Partial payment mode
             return (
               <div>
@@ -138,7 +243,7 @@ const Sales = () => {
               </div>
             );
           }
-          
+
           return modeLabel;
         }
       },
@@ -189,8 +294,10 @@ const Sales = () => {
         showEdit={false}
         isLoading={isLoading}
         rowActions={rowActions}
+        onRowClick={handleRowClick}
         isRowDisabled={(record) => record?.is_reverted === true}
       />
+
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <DialogContent>
           <DialogHeader>
@@ -211,7 +318,154 @@ const Sales = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      </>
+
+      <CustomDrawer
+        isOpen={invoiceOpen}
+        onClose={() => setInvoiceOpen(false)}
+        title="Sales Invoice"
+        subtitle={
+          invoiceData?.sales?.sales_code
+            ? `Invoice ${invoiceData.sales.sales_code}`
+            : "Invoice details"
+        }
+        footer={false}
+        width={700}
+      >
+        {invoiceData ? (
+          <div className="space-y-6">
+            <div className="text-sm text-muted-foreground">
+              {invoiceData.sales?.created_at &&
+                `Created: ${dayjs(invoiceData.sales.created_at).format("DD MMM YYYY, hh:mm A")}`
+              }
+            </div>
+            <div className="w-full overflow-hidden border rounded-lg">
+
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Item</TableHead>
+                    <TableHead className="text-right">Qty</TableHead>
+                    <TableHead className="text-right">Rate</TableHead>
+                    <TableHead className="text-right">Tax</TableHead>
+                    <TableHead className="text-right">Discount</TableHead>
+                    <TableHead className="text-right">Total</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {invoiceData.transactions?.length ? (
+                    invoiceData.transactions.map((line) => (
+                      <TableRow key={line.id}>
+                        <TableCell>
+                          <div className="font-medium">{line.item__item_name || line.item_description || "Item"}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {[line.item__item_code, line.item__primary_unit__short_name && `Unit: ${line.item__primary_unit__short_name}`]
+                              .filter(Boolean)
+                              .join(" • ")}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">{toNumber(line.item_quantity).toFixed(2)}</TableCell>
+                        <TableCell className="text-right">{formatMoney(line.item_rate)}</TableCell>
+                        <TableCell className="text-right">{formatMoney(line.tax_amount)}</TableCell>
+                        <TableCell className="text-right">
+                          {line.discount_percentage ? `${toNumber(line.discount_percentage).toFixed(2)}%` : formatMoney(line.discount_amount)}
+                        </TableCell>
+                        <TableCell className="text-right font-medium">{formatMoney(line.total_amount)}</TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center text-sm text-muted-foreground">
+                        No transactions found.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+
+            <div className="">
+              <div className="rounded-lg border p-4 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Subtotal</span>
+                  <span className="font-medium">{formatMoney(invoiceData.sales?.subtotal)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Tax</span>
+                  <span className="font-medium">{formatMoney(invoiceData.sales?.tax_amount)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Discount</span>
+                  <span className="font-medium">{formatMoney(invoiceData.sales?.discount_amount)}</span>
+                </div>
+                <div className="flex justify-between text-base font-semibold">
+                  <span>Total</span>
+                  <span>{formatMoney(invoiceData.sales?.total_amount)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Paid</span>
+                  <span className="font-medium">{formatMoney(invoiceData.sales?.paid_amount)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Balance</span>
+                  <span className="font-medium">{formatMoney(invoiceData.sales?.balance_amount)}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* {invoiceData.returns?.length ? (
+              <div className="rounded-lg border p-4 space-y-4">
+                <div className="text-sm font-semibold text-muted-foreground">Returns</div>
+                {invoiceData.returns.map((ret) => (
+                  <div key={ret.id} className="rounded-md border p-3 space-y-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                      <div className="font-medium">{ret.return_code || "Return"}</div>
+                      <div className="text-muted-foreground">
+                        {ret.return_date ? dayjs(ret.return_date).format("DD MMM YYYY") : ""}
+                      </div>
+                    </div>
+                    <div className="text-xs text-muted-foreground">{ret.notes || "—"}</div>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Item</TableHead>
+                          <TableHead className="text-right">Qty</TableHead>
+                          <TableHead className="text-right">Rate</TableHead>
+                          <TableHead className="text-right">Total</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {ret.transactions?.length ? (
+                          ret.transactions.map((line) => (
+                            <TableRow key={line.id}>
+                              <TableCell>{line.item_name || "Item"}</TableCell>
+                              <TableCell className="text-right">{toNumber(line.return_quantity).toFixed(2)}</TableCell>
+                              <TableCell className="text-right">{formatMoney(line.item_rate)}</TableCell>
+                              <TableCell className="text-right font-medium">{formatMoney(line.total_amount)}</TableCell>
+                            </TableRow>
+                          ))
+                        ) : (
+                          <TableRow>
+                            <TableCell colSpan={4} className="text-center text-xs text-muted-foreground">
+                              No return lines
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                ))}
+              </div>
+            ) : null)}
+              </div>
+            } */}
+          </div>
+        ) : (
+          <div className="flex h-40 items-center justify-center p-6 text-sm text-muted-foreground">
+            Loading invoice details...
+          </div>
+        )}
+      </CustomDrawer>
+    </>
   );
 };
 

@@ -674,7 +674,7 @@ export default function CreateSalePage() {
                     <tbody className="divide-y divide-gray-200">
                       {formData.transactions.length === 0 ? (
                         <tr>
-                          <td colSpan={4} className="px-3 py-8 text-center text-gray-500 italic">
+                          <td colSpan={4} className="px-3 py-4 text-center text-gray-500 italic">
                             Add items from catalog.
                           </td>
                         </tr>

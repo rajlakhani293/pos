@@ -604,18 +604,16 @@ const DynamicTable = ({
 
               <div className="flex items-center gap-2">
                 {title && setAddEntityOpen && (
-                  <>
-                    <Button
-                      size="sm"
-                      onClick={() => setAddEntityOpen?.(true)}
-                      className="gap-2"
-                    >
-                      <PlusIcon className="h-4 w-4" />
-                      {title}
-                    </Button>
-                    {secondaryActionButton}
-                  </>
+                  <Button
+                    size="sm"
+                    onClick={() => setAddEntityOpen?.(true)}
+                    className="gap-2"
+                  >
+                    <PlusIcon className="h-4 w-4" />
+                    {title}
+                  </Button>
                 )}
+                {secondaryActionButton}
               </div>
             </div>
           </div>
@@ -815,7 +813,7 @@ const DynamicTable = ({
       <div ref={paginationSentinelRef} className="h-px w-full" aria-hidden />
 
       {/* Footer / Pagination */}
-      {totalItems > 20 && (
+      {totalItems > 10 && (
       <div
         className={cn(
           "sticky bottom-4 transition-all duration-300",

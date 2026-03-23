@@ -21,18 +21,8 @@ export const navData = [
     },
     {
       title: "Sales",
-      url: "#",
+      url: "/sales",
       icon: SalesIcon,
-      items: [
-        {
-          title: "Sales",
-          url: "/sales",
-        },
-        {
-          title: "Party Credit Summary",
-          url: "/sales/credit",
-        },
-      ],
     },
     {
       title: "Inventory",
