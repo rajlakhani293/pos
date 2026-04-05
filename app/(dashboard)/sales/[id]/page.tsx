@@ -14,28 +14,14 @@ import { showToast } from "@/lib/toast";
 type SalesTransaction = {
   id: number;
   item_id: number;
-  item__item_name: string;
+  item?: number;
+  item__item_name?: string;
+  item_name?: string;
+  item_description?: string;
   item_quantity: number | string;
   returned_quantity: number | string;
   item_rate: number | string;
   total_amount: number | string;
-};
-
-type SalesReturnLine = {
-  id: number;
-  item_name: string;
-  return_quantity: number | string;
-  item_rate: number | string;
-  total_amount: number | string;
-};
-
-type SalesReturnRecord = {
-  id: number;
-  return_code: string;
-  return_date: string;
-  total_return_amount: number | string;
-  notes?: string;
-  transactions: SalesReturnLine[];
 };
 
 type SalesData = {
@@ -44,10 +30,9 @@ type SalesData = {
   total_amount: number | string;
   paid_amount: number | string;
   outstanding_amount?: number | string;
-  is_reverted: boolean;
   notes?: string;
+  status?: number;
   transactions: SalesTransaction[];
-  returns: SalesReturnRecord[];
 };
 
 type ItemDropdown = {
@@ -60,6 +45,7 @@ type ItemDropdown = {
 
 type NewItemLine = {
   item_id: number;
+  item?: number;
   item_name: string;
   item_code: string;
   item_rate: number;
@@ -85,13 +71,15 @@ export default function SalesDetailPage() {
   const [returnNotes, setReturnNotes] = useState("");
   const [itemsList, setItemsList] = useState<ItemDropdown[]>([]);
   const [selectedItemId, setSelectedItemId] = useState<string>("");
-  const [newItemQty, setNewItemQty] = useState<string>("");
+  const [newItemQty, setNewItemQty] = useState<string>("1");
   const [newItemRate, setNewItemRate] = useState<string>("");
   const [updateNotes, setUpdateNotes] = useState("");
   const [newItems, setNewItems] = useState<NewItemLine[]>([]);
   const [isFooterStuck, setIsFooterStuck] = useState(false);
   const paginationSentinelRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  const fetchedSaleIdRef = useRef<number | null>(null);
+  const itemsLoadedRef = useRef(false);
 
 
   const fetchSale = useCallback(async () => {
@@ -112,10 +100,12 @@ export default function SalesDetailPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [getSaleById, saleId]);
+  }, [saleId, getSaleById]);
 
   useEffect(() => {
     if (!Number.isFinite(saleId)) return;
+    if (fetchedSaleIdRef.current === saleId) return;
+    fetchedSaleIdRef.current = saleId;
     fetchSale();
   }, [saleId, fetchSale]);
 
@@ -131,6 +121,8 @@ export default function SalesDetailPage() {
   }, [getItemsDropdown]);
 
   useEffect(() => {
+    if (itemsLoadedRef.current) return;
+    itemsLoadedRef.current = true;
     fetchItems();
   }, [fetchItems]);
 
@@ -145,27 +137,9 @@ export default function SalesDetailPage() {
       },
       {
         threshold: 0.01,
+        root: contentRef.current,
         rootMargin: "0px 0px -100px 0px",
       }
-    );
-
-    observer.observe(sentinel);
-    return () => observer.disconnect();
-  }, []);
-
-    useEffect(() => {
-    const sentinel = paginationSentinelRef.current;
-    if (!sentinel) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const entry = entries[0];
-        setIsFooterStuck(!entry.isIntersecting);
-      },
-      {
-        threshold: 0.01,
-        root: contentRef.current
-      },
     );
 
     observer.observe(sentinel);
@@ -188,8 +162,7 @@ export default function SalesDetailPage() {
     const originalTotal = toNumber(saleData?.total_amount || 0);
     const returnAmount = returnPreviewAmount;
     const exchangeAmount = newItemsTotal;
-    
-    // Always calculate: Original + New Items - Return
+
     return originalTotal + exchangeAmount - returnAmount;
   }, [saleData, returnPreviewAmount, newItemsTotal]);
 
@@ -198,18 +171,27 @@ export default function SalesDetailPage() {
     return netAmount - paidAmount;
   }, [netAmount, saleData]);
 
+  const isFullyReturned = (saleData?.status || 0) === 3;
+
   const selectedItem = useMemo(() => {
     const id = Number(selectedItemId);
     if (!id) return null;
     return itemsList.find((item) => item.id === id) || null;
   }, [itemsList, selectedItemId]);
 
+  const itemLookup = useMemo(() => {
+    return itemsList.reduce<Record<number, ItemDropdown>>((acc, item) => {
+      acc[item.id] = item;
+      return acc;
+    }, {});
+  }, [itemsList]);
+
   const handleAddNewItem = () => {
     if (!selectedItem) {
       showToast.error("Select an item");
       return;
     }
-    const qty = Number(newItemQty);
+    const qty = Number(newItemQty || 1);
     const rate = Number(newItemRate || selectedItem.selling_price || 0);
     if (!qty || qty <= 0) {
       showToast.error("Quantity must be greater than 0");
@@ -231,7 +213,7 @@ export default function SalesDetailPage() {
 
     setNewItems((prev) => [...prev, line]);
     setSelectedItemId("");
-    setNewItemQty("");
+    setNewItemQty("1");
     setNewItemRate("");
   };
 
@@ -241,8 +223,8 @@ export default function SalesDetailPage() {
 
   const handleSaveAll = async () => {
     if (!saleData) return;
-    if (saleData.is_reverted) {
-      showToast.error("Sale already reverted");
+    if (isFullyReturned) {
+      showToast.error("Sale is already fully returned");
       return;
     }
 
@@ -252,7 +234,8 @@ export default function SalesDetailPage() {
         const balanceQty = toNumber(line.item_quantity) - toNumber(line.returned_quantity);
         if (qty <= 0) return null;
         if (qty > balanceQty) {
-          throw new Error(`${line.item__item_name}: return qty exceeds balance (${balanceQty})`);
+          const itemLabel = line.item__item_name || itemLookup[line.item_id || line.item || 0]?.item_name || line.item_name || line.item_description || "Item";
+          throw new Error(`${itemLabel}: return qty exceeds balance (${balanceQty})`);
         }
         return {
           sales_transaction_id: line.id,
@@ -323,7 +306,7 @@ export default function SalesDetailPage() {
             <p className="text-sm text-gray-500">
               Total: {toNumber(saleData.total_amount).toFixed(2)} | Paid: {toNumber(saleData.paid_amount).toFixed(2)}
             </p>
-            {saleData.is_reverted && <p className="text-sm text-red-600 mt-1">This sale is fully reverted.</p>}
+            {isFullyReturned && <p className="text-sm text-red-600 mt-1">This sale is fully returned.</p>}
           </div>
           <Button variant="outline" onClick={() => router.push("/sales")}>Back</Button>
         </div>
@@ -350,7 +333,7 @@ export default function SalesDetailPage() {
                     const balance = sold - returned;
                     return (
                       <tr key={line.id} className="border-t border-gray-100">
-                        <td className="p-2">{line.item__item_name}</td>
+                        <td className="p-2">{line.item__item_name || itemLookup[line.item_id || line.item || 0]?.item_name || line.item_name || line.item_description || "Item"}</td>
                         <td className="p-2 text-right">{sold}</td>
                         <td className="p-2 text-right">{returned}</td>
                         <td className="p-2 text-right">{balance}</td>
@@ -359,10 +342,11 @@ export default function SalesDetailPage() {
                           <UniFieldInput
                             type="number"
                             min={0}
+                            placeholder="0.00"
                             step={0.01}
                             value={returnQty[line.id] || ""}
                             onChange={(e) => setReturnQty((prev) => ({ ...prev, [line.id]: e.target.value }))}
-                            disabled={saleData.is_reverted || balance <= 0}
+                            disabled={isFullyReturned || balance <= 0}
                           />
                         </td>
                       </tr>
@@ -379,6 +363,7 @@ export default function SalesDetailPage() {
                 value={returnNotes}
                 onChange={(e) => setReturnNotes(e.target.value)}
                 placeholder="Optional notes"
+                disabled={isFullyReturned}
               />
               <div className="flex items-end justify-between gap-3">
                 <p className="text-sm text-gray-600">Return Amount Preview: {returnPreviewAmount.toFixed(2)}</p>
@@ -387,7 +372,7 @@ export default function SalesDetailPage() {
           </div>
 
           <div className="border border-gray-200 rounded-lg p-4">
-            <h2 className="text-lg font-semibold mb-3">Add Items (Exchange)</h2>
+            <h2 className="text-lg font-semibold mb-3">Add Items</h2>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
               <UniFieldSelect
                 label="Item"
@@ -408,7 +393,7 @@ export default function SalesDetailPage() {
                 step={0.01}
                 value={newItemQty}
                 onChange={(e) => setNewItemQty(e.target.value)}
-                disabled={saleData.is_reverted}
+                disabled={isFullyReturned}
               />
               <UniFieldInput
                 label="Rate"
@@ -418,12 +403,12 @@ export default function SalesDetailPage() {
                 value={newItemRate}
                 onChange={(e) => setNewItemRate(e.target.value)}
                 placeholder={selectedItem?.selling_price?.toString() || "0.00"}
-                disabled={saleData.is_reverted}
+                disabled={isFullyReturned}
               />
               <div className="flex items-end">
                 <Button
                   onClick={handleAddNewItem}
-                  disabled={saleData.is_reverted}
+                  disabled={isFullyReturned}
                   className="w-full"
                 >
                   Add Item
@@ -475,7 +460,7 @@ export default function SalesDetailPage() {
                 value={updateNotes}
                 onChange={(e) => setUpdateNotes(e.target.value)}
                 placeholder="Optional notes"
-                disabled={saleData.is_reverted}
+                disabled={isFullyReturned}
               />
               <div />
             </div>
@@ -498,7 +483,7 @@ export default function SalesDetailPage() {
                   <span className="font-bold text-lg text-green-600">₹{newItemsTotal.toFixed(2)}</span>
                 </div>
               )}
-              
+
               {returnPreviewAmount > 0 && (
                 <div className="text-sm">
                   <span className="text-gray-600">- Return: </span>
@@ -530,7 +515,7 @@ export default function SalesDetailPage() {
               </Button>
               <Button
                 onClick={handleSaveAll}
-                disabled={saleData.is_reverted || isSubmitting}
+                disabled={isFullyReturned || isSubmitting}
                 className="min-w-[120px] rounded-lg px-4 py-1.5 bg-black text-white"
               >
                 {isSubmitting ? (

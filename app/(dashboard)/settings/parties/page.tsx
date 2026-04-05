@@ -85,12 +85,46 @@ const Parties = () => {
         }
       },
       {
-        key: "wallet_balance",
-        title: "Wallet Balance",
-      },
-      {
         key: "current_balance",
         title: "Current Balance",
+        render: (value: any, record: any) => {
+          const balance = parseFloat(value || 0);
+          const balanceType = record.row.balance_type;
+          
+          if (!balanceType) {
+            return (
+              <div className="font-medium">
+                ₹{balance.toFixed(2)}
+              </div>
+            );
+          }
+          
+          // Type 1: Debit (Receivable) - Positive amount
+          // Type 2: Credit (Payable) - Negative amount
+          const isNegative = balanceType === 2;
+          const displayAmount = isNegative ? -Math.abs(balance) : Math.abs(balance);
+          const colorClass = isNegative ? "text-red-600" : "text-green-600";
+          
+          const balanceTypeLabels: { [key: number]: string } = {
+            1: "Debit (Pending/Receivable)",
+            2: "Credit (Advance/Payable)"
+          };
+          
+          const label = balanceTypeLabels[balanceType] || "";
+          
+          return (
+            <div className="space-y-1">
+              <div className={`font-medium ${colorClass}`}>
+                {isNegative ? "-" : ""}₹{Math.abs(displayAmount).toFixed(2)}
+              </div>
+              {/* {label && (
+                <div className="text-xs text-muted-foreground">
+                  {label}
+                </div>
+              )} */}
+            </div>
+          );
+        }
       },
     ],
     [currentPage, itemsPerPage]

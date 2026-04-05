@@ -12,7 +12,6 @@ const endpointsConfig = {
   editSale: { query: ({ id, payLoad }: { id: any; payLoad: any }) => putMutation(`${id}`, payLoad) },
   getSaleById: { query: ({ id }: { id: number }) => getMutation(`${id}`) },
   getSalesView: { query: ({ id }: { id: number }) => getMutation(`${id}/view`) },
-  fullReturnSale: { query: ({ id, payLoad }: { id: number; payLoad: any }) => createMutation(`${id}/returns`)(payLoad) },
 }
 
 export const sales = createApi({

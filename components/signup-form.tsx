@@ -8,15 +8,13 @@ import {
   Field,
   FieldDescription,
   FieldGroup,
-  FieldLabel,
 } from "@/components/ui/field"
 import { OTPVerification } from "@/components/otp-verification"
 import {
   Card,
   CardContent,
 } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { UniFieldInput } from "@/components/ui/unifield-input"
 import { auth } from "@/lib/api/auth"
 
 const SignupForm = ({ className, ...props }: React.ComponentProps<"div">) => {
@@ -29,7 +27,6 @@ const SignupForm = ({ className, ...props }: React.ComponentProps<"div">) => {
   const [otpAttempts, setOtpAttempts] = useState(0)
   const [otp, setOtp] = useState("")
   const [isBlocked] = useState(false)
-  const [registrationToken, setRegistrationToken] = useState("")
 
   const canRequestOTP = !isBlocked && otpAttempts < 3
   const incrementAttempts = () => setOtpAttempts(prev => prev + 1)
@@ -60,11 +57,7 @@ const SignupForm = ({ className, ...props }: React.ComponentProps<"div">) => {
         setOtp(response.data.otp_code)
         toast.success(response.message)
         success = true
-      } else {
-        toast.error(response.message || "Failed to send OTP")
       }
-    } catch (error: any) {
-      if (showToast) toast.error(error.data?.message || "Failed to send OTP. Try again.")
     } finally {
       setIsLoading(false)
     }
@@ -92,14 +85,9 @@ const SignupForm = ({ className, ...props }: React.ComponentProps<"div">) => {
 
       if (result.code === 200) {
         const token = result.data.registration_token
-        setRegistrationToken(token)
         return token
-      } else {
-        toast.error(result.message || "OTP verification failed")
-        return null
       }
     } catch (error: any) {
-      toast.error(error.data?.message || "OTP verification failed. Try again.")
       return null
     }
   }, [mobileNumber, verifyOtpApi])
@@ -123,23 +111,20 @@ const SignupForm = ({ className, ...props }: React.ComponentProps<"div">) => {
           <form className="space-y-6" onSubmit={handleSendOTPForm}>
             <FieldGroup>
               <Field>
-                <Label htmlFor="mobile">Mobile Number</Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-sm text-muted-foreground">+91</span>
-                  <Input
-                    id="mobile"
-                    name="mobile"
-                    type="tel"
-                    placeholder="Enter 10-digit mobile number"
-                    maxLength={10}
-                    pattern="[6-9][0-9]{9}"
-                    required
-                    disabled={isLoading}
-                    value={mobileNumber}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setMobileNumber(e.target.value)}
-                    className="pl-12"
-                  />
-                </div>
+                <UniFieldInput
+                  id="mobile"
+                  name="mobile"
+                  label="Mobile Number"
+                  type="tel"
+                  placeholder="Enter 10-digit mobile number"
+                  maxLength={10}
+                  pattern="[6-9][0-9]{9}"
+                  required
+                  disabled={isLoading}
+                  value={mobileNumber}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setMobileNumber(e.target.value)}
+                  prefix="+91"
+                />
                 <FieldDescription>
                   We'll send a verification code to this number
                 </FieldDescription>

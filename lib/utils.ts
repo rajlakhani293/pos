@@ -9,6 +9,21 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+// Generate dynamic financial years
+const generateFinancialYears = (count = 5) => {
+  const currentYear = new Date().getFullYear();
+  const currentFY = currentYear % 100;
+  const years = [];
+  
+  for (let i = 0; i < count; i++) {
+    const fyStart = (currentFY - i) % 100;
+    const fyEnd = (fyStart + 1) % 100;
+    years.push(`FY ${fyStart}-${fyEnd.toString().padStart(2, '0')}`);
+  }
+  
+  return years;
+};
+
 export const dateRanges = [
   "Today",
   "Yesterday",
@@ -20,9 +35,7 @@ export const dateRanges = [
   "Last Year",
   "Last 30 Days",
   "Last Quarter",
-  // Add Financial Years dynamically or statically as needed
-  "FY 2024-25",
-  "FY 2023-24",
+  ...generateFinancialYears(5), // Generate last 5 financial years
 ];
 
 
@@ -30,6 +43,18 @@ export const getDateRange = (range: string) => {
   const today = dayjs();
   let startDate = null;
   let endDate = null;
+
+  // If no range provided, use current financial year as default
+  if (!range) {
+    const currentYear = today.year();
+    const currentFY = currentYear % 100;
+    const nextFY = (currentFY + 1) % 100;
+    const fullStartYear = currentFY < 100 ? 2000 + currentFY : currentFY;
+    const fullEndYear = fullStartYear + 1;
+    startDate = dayjs(`${fullStartYear}-04-01`).startOf('day').toDate();
+    endDate = dayjs(`${fullEndYear}-03-31`).endOf('day').toDate();
+    return { startDate, endDate };
+  }
 
   switch (range) {
     case "Today":
@@ -72,15 +97,11 @@ export const getDateRange = (range: string) => {
       startDate = today.subtract(1, "quarter").startOf("quarter").toDate();
       endDate = today.subtract(1, "quarter").endOf("quarter").toDate();
       break;
-    // Add logic for FY years if needed
     default:
       if (range.startsWith("FY")) {
-         // Logic for financial year
-         // Assuming FY starts April 1st
          const years = range.replace("FY ", "").split("-");
          if (years.length === 2) {
              const startYear = parseInt(years[0]);
-             // If year is 2 digits, assume 20xx
              const fullStartYear = startYear < 100 ? 2000 + startYear : startYear;
              const fullEndYear = fullStartYear + 1;
              startDate = dayjs(`${fullStartYear}-04-01`).startOf('day').toDate();
@@ -134,24 +155,20 @@ export const getInitialFormValues = <T extends FormValuesWithLoading>(
     }
   });
 
-  // Cast to T after initialization
   const typedValues = initialValues as T;
 
-  // Set loading state flag
   if (mode === 'create') {
-    typedValues.isLoaded = "true"; // form is ready in create mode
+    typedValues.isLoaded = "true";
   } else if (mode === 'edit') {
-    typedValues.isLoaded = data ? "true" : "false"; // wait for data in edit mode
+    typedValues.isLoaded = data ? "true" : "false";
   }
 
-  // If we have data (edit mode), merge it with the initial values
   if (data && data !== null) {
     for (const field of schema) {
       if (data[field.name] !== undefined) {
         (typedValues as any)[field.name] = data[field.name]?.toString() || "";
       }
     }
-    // Ensure we mark as loaded when we have data
     typedValues.isLoaded = "true";
   }
 

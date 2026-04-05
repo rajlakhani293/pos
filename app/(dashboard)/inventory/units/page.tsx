@@ -9,6 +9,7 @@ import { UnitForm } from "./createUpdate";
 const Units = () => {
   const [isAddEntityOpen, setAddEntityOpen] = useState<boolean>(false);
   const [selectedId, setSelectedId] = useState<any>(null);
+  const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
   const {
     orders,
     totalItems,
@@ -26,6 +27,7 @@ const Units = () => {
   } = useTableData({
     getMaster: items.useGetItemUnitsDataMutation,
     itemsPerPage: 20,
+    extraOptions: { refreshTrigger },
   });
 
   const handleCreateItem = () => {
@@ -41,6 +43,11 @@ const Units = () => {
   const handleClose = () => {
     setAddEntityOpen(false);
     setSelectedId(null);
+  };
+
+  const handleSuccess = () => {
+    setRefreshTrigger(prev => prev + 1);
+    handleClose();
   };
 
   const columns = useMemo(
@@ -86,10 +93,7 @@ const Units = () => {
       <UnitForm
         isOpen={isAddEntityOpen}
         onClose={handleClose}
-        onSuccess={() => {
-          setAddEntityOpen(false);
-          setSelectedId(null);
-        }}
+        onSuccess={handleSuccess}
         id={selectedId?.id}
         title={selectedId ? `Edit Item Unit` : `Add Item Unit`}
       />

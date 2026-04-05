@@ -82,6 +82,11 @@ export function OTPVerification({
       return
     }
 
+    // Clear OTP input when resending
+    setOtpValue("")
+    setOtpError(false)
+    setIsSuccess(false)
+
     setCanResend(false)
     setTimer(OTP_TIMER_SECONDS)
 

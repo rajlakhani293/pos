@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "@/lib/imports";
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose, DrawerDescription } from "@/components/ui/drawer";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { UniFieldInput } from "@/components/ui/unifield-input";
 import { UniFieldSelect } from "@/components/ui/unifield-select";
@@ -206,11 +206,13 @@ const DynamicForm = <T extends Record<string, any>>({
             <div>
               <DrawerTitle>{title}</DrawerTitle>
               {note ? (
-                <DrawerDescription>{note}</DrawerDescription>
+                <span className="text-sm text-muted-foreground">
+                  {note}
+                </span>
               ) : (
-                <DrawerDescription className="sr-only">
+                <span className="sr-only">
                   Form dialog for {title || 'form'}
-                </DrawerDescription>
+                </span>
               )}
             </div>
             <div className="flex items-center gap-2">

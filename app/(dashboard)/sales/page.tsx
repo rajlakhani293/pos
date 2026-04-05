@@ -5,19 +5,10 @@ import { useTableData } from "@/hooks/useTableData";
 import DynamicTable from "@/components/DynamicTable";
 import { sales } from "@/lib/api/sales";
 import { useRouter } from "next/navigation";
-import { MdOutlineSettingsBackupRestore } from "react-icons/md";
 import dayjs from "dayjs";
 import { showToast } from "@/lib/toast";
-import { Button } from "@/components/ui/button";
 import CustomDrawer from "@/components/CustomDrawer";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { Edit } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
@@ -28,32 +19,12 @@ type InvoiceTransaction = {
   item__item_name?: string;
   item__primary_unit__short_name?: string;
   item_quantity: number | string;
-  returned_quantity?: number | string;
   item_rate: number | string;
   total_amount: number | string;
   item_description?: string;
   discount_percentage?: number | string;
   discount_amount?: number | string;
   tax_amount?: number | string;
-};
-
-type InvoiceReturnLine = {
-  id: number;
-  sales_transaction_id: number;
-  item_id: number;
-  item_name?: string;
-  return_quantity: number | string;
-  item_rate: number | string;
-  total_amount: number | string;
-};
-
-type InvoiceReturn = {
-  id: number;
-  return_code?: string;
-  return_date?: string;
-  total_return_amount?: number | string;
-  notes?: string;
-  transactions: InvoiceReturnLine[];
 };
 
 type SalesInvoiceData = {
@@ -71,7 +42,6 @@ type SalesInvoiceData = {
     payment_mode?: number | string;
     payment_mode_label?: string;
     notes?: string;
-    is_reverted?: boolean;
   };
   party?: {
     id?: number;
@@ -87,7 +57,6 @@ type SalesInvoiceData = {
   shop?: {
     id?: number;
     shop_name?: string;
-    legal_name?: string;
     phone_number?: string;
     email?: string;
     address?: string;
@@ -101,7 +70,6 @@ type SalesInvoiceData = {
     website_url?: string;
   };
   transactions: InvoiceTransaction[];
-  returns: InvoiceReturn[];
 };
 
 const toNumber = (value: number | string | undefined | null) => Number(value || 0);
@@ -109,10 +77,6 @@ const formatMoney = (value: number | string | undefined | null) => `₹${toNumbe
 
 const Sales = () => {
   const router = useRouter();
-  const [refreshKey, setRefreshKey] = useState(0);
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [selectedSale, setSelectedSale] = useState<{ id: number | string; sales_code?: string } | null>(null);
-  const [fullReturnSale, { isLoading: isReverting }] = sales.useFullReturnSaleMutation();
   const [getSalesView] = sales.useGetSalesViewMutation();
   const [invoiceOpen, setInvoiceOpen] = useState(false);
   const [invoiceData, setInvoiceData] = useState<SalesInvoiceData | null>(null);
@@ -142,7 +106,6 @@ const Sales = () => {
   } = useTableData({
     getMaster: sales.useGetSalesDataMutation,
     itemsPerPage: 20,
-    extraOptions: { refresh_key: refreshKey },
   });
 
   const handleCreateSale = () => {
@@ -163,56 +126,21 @@ const Sales = () => {
     }
   }, [getSalesView]);
 
-  const openFullReturnConfirm = (record: any) => {
-    if (record?.is_reverted) {
-      showToast.error("Sale already reverted");
-      return;
-    }
-    setSelectedSale({ id: record?.id, sales_code: record?.sales_code });
-    setConfirmOpen(true);
-  };
-
-  const handleConfirmReturn = async () => {
-    if (!selectedSale) return;
-    try {
-      const result = await fullReturnSale({
-        id: Number(selectedSale.id),
-        payLoad: {},
-      }).unwrap() as { message?: string };
-      showToast.success(result?.message || "Sales reverted successfully");
-      setConfirmOpen(false);
-      setSelectedSale(null);
-      setRefreshKey((prev) => prev + 1);
-    } catch (error: any) {
-      const errorData = error?.data;
-      showToast.error(errorData?.message || "Failed to revert sale");
-    }
-  };
 
   const rowActions = useCallback((id: any, record: any) => {
     return [
       {
-        key: "return",
-        label: "Full Return",
-        labelText: "Full Return",
-        icon: <MdOutlineSettingsBackupRestore className="size-5" />,
-        onClick: () => {
-          openFullReturnConfirm(record);
-        },
-        priority: 1,
-      },
-      {
         key: "update",
-        label: "Return/Update",
-        labelText: "Return/Update",
+        label: "Update",
+        labelText: "Update",
         icon: <Edit className="size-5" />,
         onClick: () => {
           router.push(`/sales/${id}`);
         },
-        priority: 2,
+        priority: 1,
       },
     ];
-  }, [router, openFullReturnConfirm]);
+  }, [router]);
 
   const columns = useMemo(
     () => [
@@ -248,13 +176,13 @@ const Sales = () => {
         }
       },
       {
-        key: "is_reverted",
+        key: "status",
         title: "Status",
-        render: (value: boolean) => {
-          if (value) {
+        render: (value: number) => {
+          if (value === 3) {
             return (
               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
-                Reverted
+                Fully Returned
               </span>
             );
           }
@@ -295,29 +223,8 @@ const Sales = () => {
         isLoading={isLoading}
         rowActions={rowActions}
         onRowClick={handleRowClick}
-        isRowDisabled={(record) => record?.is_reverted === true}
       />
 
-      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Revert Full Sale</DialogTitle>
-            <DialogDescription>
-              This will return all remaining quantities to stock
-              {selectedSale?.sales_code ? ` for ${selectedSale.sales_code}` : ""}.
-              This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setConfirmOpen(false)} disabled={isReverting}>
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={handleConfirmReturn} disabled={isReverting}>
-              Confirm Return
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       <CustomDrawer
         isOpen={invoiceOpen}
@@ -412,52 +319,6 @@ const Sales = () => {
               </div>
             </div>
 
-            {/* {invoiceData.returns?.length ? (
-              <div className="rounded-lg border p-4 space-y-4">
-                <div className="text-sm font-semibold text-muted-foreground">Returns</div>
-                {invoiceData.returns.map((ret) => (
-                  <div key={ret.id} className="rounded-md border p-3 space-y-2">
-                    <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
-                      <div className="font-medium">{ret.return_code || "Return"}</div>
-                      <div className="text-muted-foreground">
-                        {ret.return_date ? dayjs(ret.return_date).format("DD MMM YYYY") : ""}
-                      </div>
-                    </div>
-                    <div className="text-xs text-muted-foreground">{ret.notes || "—"}</div>
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Item</TableHead>
-                          <TableHead className="text-right">Qty</TableHead>
-                          <TableHead className="text-right">Rate</TableHead>
-                          <TableHead className="text-right">Total</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {ret.transactions?.length ? (
-                          ret.transactions.map((line) => (
-                            <TableRow key={line.id}>
-                              <TableCell>{line.item_name || "Item"}</TableCell>
-                              <TableCell className="text-right">{toNumber(line.return_quantity).toFixed(2)}</TableCell>
-                              <TableCell className="text-right">{formatMoney(line.item_rate)}</TableCell>
-                              <TableCell className="text-right font-medium">{formatMoney(line.total_amount)}</TableCell>
-                            </TableRow>
-                          ))
-                        ) : (
-                          <TableRow>
-                            <TableCell colSpan={4} className="text-center text-xs text-muted-foreground">
-                              No return lines
-                            </TableCell>
-                          </TableRow>
-                        )}
-                      </TableBody>
-                    </Table>
-                  </div>
-                ))}
-              </div>
-            ) : null)}
-              </div>
-            } */}
           </div>
         ) : (
           <div className="flex h-40 items-center justify-center p-6 text-sm text-muted-foreground">

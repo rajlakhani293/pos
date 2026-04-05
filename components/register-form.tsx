@@ -24,7 +24,6 @@ import { businessTypeOptions } from "@/lib/utils/constants"
 interface RegisterForm {
   companyLogo: File | null
   companyName: string
-  legalName: string
   phone: string
   email: string
   country: string
@@ -45,7 +44,6 @@ interface FormErrors {
 // Yup validation schema
 const validationSchema = yup.object().shape({
   companyName: yup.string().required('Company name is required'),
-  legalName: yup.string(),
   phone: yup.string().required('Phone number is required'),
   email: yup.string().email('Invalid email format'),
   country: yup.string().required('Country is required'),
@@ -90,7 +88,6 @@ const Register = () => {
   const initialValues: RegisterForm = {
     companyLogo: null,
     companyName: "",
-    legalName: "",
     phone: phone_number,
     email: "",
     country: "1",
@@ -267,8 +264,7 @@ const Register = () => {
       // Prepare API payload
       const apiPayload = {
         registration_token: registration_token,
-        shop_name: formData.companyName,
-        legal_name: formData.legalName || "",
+        company_name: formData.companyName,
         user_name: formData.companyName,
         email: formData.email,
         phone_number: `+91${formData.phone}`,
@@ -290,6 +286,7 @@ const Register = () => {
         const formData = new FormData()
         Object.entries(apiPayload).forEach(([key, value]) => {
           if (value !== undefined && value !== null) {
+            if (key === "logo_image" && value instanceof File) return
             formData.append(key, value.toString())
           }
         })
@@ -304,8 +301,6 @@ const Register = () => {
       if (result.code === 200) {
         toast.success(result.message || "Registration successful!")
         router.push("/login")
-      } else {
-        toast.error(result.message || "Registration failed. Please try again.")
       }
 
     } catch (err) {
@@ -323,8 +318,6 @@ const Register = () => {
         setTimeout(() => {
           scrollToErrorHook()
         }, 100)
-      } else {
-        toast.error((err as any)?.data?.message || "Registration failed. Please try again.")
       }
     } finally {
       setIsLoading(false)
@@ -364,43 +357,41 @@ const Register = () => {
                   {/* Company Logo */}
                   <Field>
                     <FieldLabel htmlFor="picture">Company Logo</FieldLabel>
-                    <div className={`w-full border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-                      isDragging 
-                        ? 'border-blue-500 bg-blue-50' 
-                        : 'border-gray-300 hover:border-gray-400'
-                    }`}>
-                      <div 
-                        className="flex flex-col items-center justify-center space-y-2 cursor-pointer"
-                        onDragOver={handleDragOver}
-                        onDragLeave={handleDragLeave}
-                        onDrop={handleDrop}
-                      >
+                    <label 
+                      htmlFor="picture"
+                      className={`w-full border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer ${
+                        isDragging 
+                          ? 'border-blue-500 bg-blue-50' 
+                          : 'border-gray-300 hover:border-gray-400'
+                      }`}
+                      onDragOver={handleDragOver}
+                      onDragLeave={handleDragLeave}
+                      onDrop={handleDrop}
+                    >
+                      <div className="flex flex-col items-center justify-center space-y-2">
                         <ImagePlusIcon className={`size-14 transition-colors ${
                           isDragging ? 'text-blue-500' : 'text-gray-400'
                         }`} />
-                        <label 
-                          htmlFor="picture" 
-                          className={`text-sm transition-colors ${
-                            isDragging 
-                              ? 'text-blue-600' 
-                              : 'text-gray-600 hover:text-gray-800'
-                          }`}
-                        >
+                        <span className={`text-sm transition-colors ${
+                          isDragging 
+                            ? 'text-blue-600' 
+                            : 'text-gray-600 hover:text-gray-800'
+                        }`}>
                           Choose company logo or drag and drop
-                        </label>
-                        <input
-                          id="picture"
-                          type="file"
-                          onChange={handleFileChange}
-                          className="hidden"
-                        />
+                        </span>
                         {logoFile && (
                           <div className="mt-2 text-xs text-green-600">
                             Selected: {logoFile.name}
                           </div>
                         )}
                       </div>
-                    </div>
+                    </label>
+                    <input
+                      id="picture"
+                      type="file"
+                      onChange={handleFileChange}
+                      className="hidden"
+                    />
                   </Field>
 
                   {/* Section 1: Company Information */}
@@ -417,18 +408,6 @@ const Register = () => {
                           onChange={(e) => handleInputChange("companyName", e.target.value)}
                           error={errors.companyName}
                           required
-                        />
-                      </div>
-
-                      {/* Legal Name */}
-                      <div data-field="legalName">
-                        <UniFieldInput
-                          id="legalName"
-                          label="Legal Name"
-                          placeholder="Enter legal name"
-                          value={formData.legalName}
-                          onChange={(e) => handleInputChange("legalName", e.target.value)}
-                          error={errors.legalName}
                         />
                       </div>
 

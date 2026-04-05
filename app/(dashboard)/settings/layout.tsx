@@ -14,17 +14,17 @@ const data = {
       icon: TaxIcon
     },
     {
-      title: "Brands", 
+      title: "Brands",
       url: "/settings/brands",
       icon: TagIcon
     },
     {
-      title: "Parties", 
+      title: "Parties",
       url: "/settings/parties",
       icon: PersonPlusIcon
     },
     {
-      title: "Customer Ledger", 
+      title: "Customer Ledger",
       url: "/settings/ledger",
       icon: PersonPlusIcon
     },
@@ -46,40 +46,49 @@ export default function SettingsLayout({
   }, [pathname])
 
   return (
-    <div className="flex h-full flex-col bg-white">
-     <div className="border-b border-slate-200 px-8 py-6 flex flex-col gap-2">
-       <div className="">
-        <h2 className="text-2xl font-semibold text-slate-900">Settings</h2>
+    <div className="flex h-full bg-white">
+      {/* Left Navigation Tabs */}
+      <div className="w-70">
+        <div className="p-4 h-full space-y-4">
+          <div className="">
+            <h2 className="text-2xl font-semibold text-slate-900">Settings</h2>
+          </div>
+
+          <div className="">
+            <div className="space-y-1">
+              {data.navMain.map((item) => {
+                const Icon = item.icon
+                const isActive = activeTab === item.url
+                return (
+                  <button
+                    key={item.url}
+                    onClick={() => router.push(item.url)}
+                    className={cn(
+                      "w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 border cursor-pointer",
+                      isActive
+                        ? " text-blue-600 border-blue-500 bg-blue-50 hover:bg-blue-100 hover:text-blue-700"
+                        : " bg-white hover:bg-gray-100/60"
+                    )}
+                  >
+                    <Icon className={cn(
+                      "h-5 w-5 mr-3 transition-colors",
+                      isActive ? "text-blue-500" : ""
+                    )} />
+                    <span>{item.title}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div className="">
-        <Tabs value={activeTab} orientation="horizontal" className="gap-0 w-full">
-          <TabsList className="w-fit">
-            {data.navMain.map((item) => {
-              const Icon = item.icon
-              return (
-                <TabsTrigger
-                  key={item.url}
-                  value={item.url}
-                  onClick={() => router.push(item.url)}
-                  className={cn(
-                    "justify-start px-3 py-1 text-sm font-medium text-slate-600",
-                    "data-[state=active]:text-slate-900"
-                  )}
-                >
-                  <Icon className="h-4 w-4 text-current" />
-                  {item.title}
-                </TabsTrigger>
-              )
-            })}
-          </TabsList>
-        </Tabs>
+      {/* Right Content Area */}
+      <div className="flex-1 py-6 pr-6 h-full">
+        <main className="rounded-2xl border bg-gray-100/5 p-6 h-full">
+          {children}
+        </main>
       </div>
-     </div>
-
-      <main className="flex-1 overflow-y-auto px-8 py-6">
-        {children}
-      </main>
     </div>
   )
 }

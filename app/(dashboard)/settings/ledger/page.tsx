@@ -15,6 +15,7 @@ import {
 import CustomDrawer from "@/components/CustomDrawer";
 import { Spinner } from "@/components/ui/spinner";
 import { settings } from "@/lib/api/settings";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 const CustomerLedgerPage = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -263,7 +264,15 @@ const CustomerLedgerPage = () => {
         isOpen={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         title="Ledger History"
-        subtitle={selectedParty?.party__name ? selectedParty.party__name : undefined}
+        subtitle={
+          <>
+            <div className="flex gap-2">
+              <span className="font-medium">{selectedParty?.party__name || ""}</span>
+              <span className="text-muted-foreground">-</span>
+              <div className="font-medium text-left">{dayjs(selectedDate).format("MMM, YYYY")}</div>
+            </div>
+          </>
+        }
         footer={false}
         width={700}
       >
@@ -271,88 +280,79 @@ const CustomerLedgerPage = () => {
           <div className="flex h-40 items-center justify-center">
             <Spinner />
           </div>
-        ) : creditSummary ? (
+        ) : creditSummary && creditSummary.length > 0 ? (
           <div className="space-y-5">
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-muted-foreground">
-                {dayjs(`${creditSummary.year}-${creditSummary.month}-01`).format("MMM YYYY")}
-              </div>
-              <div className="text-xs text-muted-foreground">
-                {selectedParty?.party__phone_number || ""}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-3">
-              <div className="rounded-lg border p-3">
-                <div className="text-xs text-muted-foreground">Total</div>
-                <div className="text-base font-semibold">{formatMoney(creditSummary.total_amount)}</div>
-              </div>
-              <div className="rounded-lg border p-3">
-                <div className="text-xs text-muted-foreground">Paid</div>
-                <div className="text-base font-semibold">{formatMoney(creditSummary.total_paid)}</div>
-              </div>
-              <div className="rounded-lg border p-3">
-                <div className="text-xs text-muted-foreground">Due</div>
-                <div className="text-base font-semibold text-red-600">{formatMoney(creditSummary.due_amount)}</div>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              {creditSummary.days?.length ? (
-                creditSummary.days.map((day: any, dayIndex: number) => (
-                  <div key={`${day.label}-${dayIndex}`} className="rounded-lg border p-3 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="font-medium">{day.label}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {formatMoney(day.total_amount)} / {formatMoney(day.total_paid)}
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      {day.entries?.length ? (
-                        day.entries.map((entry: any, index: number) => (
-                          <div
-                            key={`${day.label}-${dayIndex}-${entry.reference_id ?? entry.sales_code ?? "entry"}-${entry.created_at ?? "na"}-${index}`}
-                            className="rounded-md border p-2 text-sm"
-                          >
-                            <div className="flex items-center justify-between gap-2">
-                              <div className="font-medium">
-                                {entry.sales_code || entry.reference_type || "Entry"}
-                              </div>
-                              <div className={toNumber(entry.amount) >= 0 ? "text-green-600" : "text-blue-600"}>
-                                {formatMoney(entry.amount)}
-                              </div>
-                            </div>
-                            <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                              {entry.entry_type && <span>{entry.entry_type}</span>}
-                              {entry.reference_id && <span>Ref #{entry.reference_id}</span>}
-                              {entry.balance_after !== undefined && (
-                                <span>Bal {formatMoney(entry.balance_after)}</span>
-                              )}
-                              {entry.created_at && (
-                                <span>{dayjs(entry.created_at).format("DD MMM, hh:mm A")}</span>
-                              )}
-                            </div>
-                            {entry.note && (
-                              <div className="mt-1 text-xs text-muted-foreground">{entry.note}</div>
-                            )}
-                          </div>
-                        ))
-                      ) : (
-                        <div className="text-xs text-muted-foreground">No entries.</div>
-                      )}
+            {/* Calculate totals from all days */}
+            {(() => {
+              const totalAmount = creditSummary.reduce((sum: number, day: any) => sum + parseFloat(day.total_amount || 0), 0);
+              return (
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="rounded-lg border p-3">
+                    <div className="text-xs text-muted-foreground">Total</div>
+                    <div className="text-base font-semibold">{formatMoney(totalAmount)}</div>
+                  </div>
+                  <div className="rounded-lg border p-3">
+                    <div className="text-xs text-muted-foreground">Transactions</div>
+                    <div className="text-base font-semibold">
+                      {creditSummary.reduce((sum: number, day: any) => sum + (day.transactions?.length || 0), 0)}
                     </div>
                   </div>
-                ))
-              ) : (
-                <div className="rounded-lg border p-4 text-sm text-muted-foreground">
-                  No history found for this month.
+                  <div className="rounded-lg border p-3">
+                    <div className="text-xs text-muted-foreground">Days</div>
+                    <div className="text-base font-semibold">{creditSummary.length}</div>
+                  </div>
                 </div>
-              )}
+              );
+            })()}
+
+            <div className="space-y-4">
+              <Accordion type="single" collapsible className="w-full">
+                {creditSummary.map((day: any, dayIndex: number) => (
+                  <AccordionItem key={`${day.date}-${dayIndex}`} value={`${day.date}-${dayIndex}`}>
+                    <AccordionTrigger className="hover:no-underline">
+                      <div className="flex items-center justify-between w-full pr-4">
+                        <div className="font-medium text-left">{dayjs(day.date).format("DD MMM, YYYY")}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {formatMoney(day.total_amount)} ({day.transactions?.length || 0} transactions)
+                        </div>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="space-y-3 pt-2">
+                        <div className="space-y-2">
+                          {day.transactions?.map((transaction: any, index: number) => (
+                            <div
+                              key={`${day.date}-${transaction.sales_code}-${index}`}
+                              className="rounded-lg border p-3 space-y-2"
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="font-medium">
+                                  {transaction.sales_code || "Transaction"}
+                                </div>
+                                <div className="text-red-600 font-semibold">
+                                  {formatMoney(transaction.amount)}
+                                </div>
+                              </div>
+                              <div className="text-sm text-muted-foreground">
+                                {transaction.note || "Sales invoice"}
+                              </div>
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                <span>{dayjs(day.date).format("DD MMM, YYYY")}</span>
+                                {transaction.sales_code && <span>• {transaction.sales_code}</span>}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
             </div>
           </div>
         ) : (
-          <div className="flex h-40 items-center justify-center text-sm text-muted-foreground">
-            Select a party to view history.
+          <div className="flex h-40 items-center justify-center text-muted-foreground">
+            No data available for selected period
           </div>
         )}
       </CustomDrawer>

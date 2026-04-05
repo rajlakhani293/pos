@@ -88,7 +88,7 @@ export function PartyForm({
     type: "textarea",
   },
   { 
-    name: "country", 
+    name: "country_id", 
     label: "Country", 
     placeholder: "Select Country", 
     type: "select",
@@ -96,7 +96,7 @@ export function PartyForm({
     options: countries,
   },
   { 
-    name: "state", 
+    name: "state_id", 
     label: "State", 
     placeholder: "Select State", 
     type: "select",
@@ -104,7 +104,7 @@ export function PartyForm({
     options: states,
   },
   { 
-    name: "city", 
+    name: "city_id", 
     label: "City", 
     placeholder: "Select City", 
     type: "select",
@@ -124,7 +124,7 @@ export function PartyForm({
   
   const [initialValues, setInitialValues] = useState<any>(() => {
     const values = getInitialFormValues(Schema);
-    values.country = "1";
+    values.country_id = 1;
     return values;
   });
 
@@ -134,6 +134,14 @@ export function PartyForm({
     try {
       const processedValues = {
         ...values,
+        party_type: parseInt(values.party_type),
+        customer_category: parseInt(values.customer_category),
+        country_id: parseInt(values.country_id),
+        state_id: parseInt(values.state_id),
+        city_id: parseInt(values.city_id),
+        pincode: parseInt(values.pincode),
+        phone_number: values.phone_number,
+        isLoaded: values.isLoaded === "true" ? true : values.isLoaded === "false" ? false : values.isLoaded
       };
 
       const result: any = id
@@ -206,15 +214,23 @@ export function PartyForm({
       const result: any = await getPartyData({ id: parseInt(id) }).unwrap();
       if (result?.data) {
         const data = result.data;
-        const baseValues = getInitialFormValues(Schema, data);
         
-        if (data.country) {
-          await loadStates(data.country);
-          if (data.state) {
-            await loadCities(data.state);
+        if (data.country_id) {
+          await loadStates(data.country_id);
+          if (data.state_id) {
+            await loadCities(data.state_id);
+            await new Promise(resolve => setTimeout(resolve, 100));
           }
         }
         
+        const mappedData = {
+          ...data,
+          country_id: data.country_id,
+          state_id: data.state_id,
+          city_id: data.city_id
+        };
+        
+        const baseValues = getInitialFormValues(Schema, mappedData);
         setInitialValues(baseValues);
       }
     } catch (e) {
@@ -223,13 +239,13 @@ export function PartyForm({
   };
 
   const handleFieldChange = (name: string, value: any) => {
-    if (name === 'country') {
-      setInitialValues((prev: any) => ({ ...prev, [name]: value, state: '', city: '' }));
+    if (name === 'country_id') {
+      setInitialValues((prev: any) => ({ ...prev, [name]: value, state_id: '', city_id: '' }));
       if (value) {
         loadStates(value);
       }
-    } else if (name === 'state') {
-      setInitialValues((prev: any) => ({ ...prev, [name]: value, city: '' }));
+    } else if (name === 'state_id') {
+      setInitialValues((prev: any) => ({ ...prev, [name]: value, city_id: '' }));
       if (value) {
         loadCities(value);
       }
@@ -251,7 +267,7 @@ export function PartyForm({
         handleGetMaster(id);
       } else {
         const defaultValues = getInitialFormValues(Schema, null, 'create');
-        defaultValues.country = "1"; 
+        defaultValues.country_id = "1"; 
         setInitialValues(defaultValues);
         loadStates("1");
       }

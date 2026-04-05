@@ -11,7 +11,6 @@ interface User {
 interface Shop {
   id: number;
   name: string;
-  legal_name?: string;
   logo_image?: string;
   website_url?: string;
   business_type_id?: number;

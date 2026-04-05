@@ -38,8 +38,6 @@ type DashboardStats = {
   today_collection: number | string;
   items_count: number;
   total_stock: number | string;
-  total_returns_count?: number;
-  total_returns_amount?: number | string;
 };
 
 type ChartPoint = {
@@ -221,11 +219,6 @@ export default function Page() {
               <div className="text-xs text-muted-foreground">Today Collection</div>
               <div className="text-lg font-semibold">{currency.format(toNumber(stats?.today_collection))}</div>
               <div className="text-xs text-muted-foreground">Paid amount</div>
-            </div>
-            <div className="rounded-lg border p-3">
-              <div className="text-xs text-muted-foreground">Returns</div>
-              <div className="text-lg font-semibold">{currency.format(toNumber(stats?.total_returns_amount))}</div>
-              <div className="text-xs text-muted-foreground">{stats?.total_returns_count || 0} returns</div>
             </div>
           </CardContent>
         </Card>

@@ -3,6 +3,14 @@ import { useTableSorting } from "./useTableSorting";
 import { getDateRange } from "@/lib/utils";
 import { useDebounce } from "./useDebounce";
 
+// Generate current financial year
+const getCurrentFinancialYear = () => {
+  const currentYear = new Date().getFullYear();
+  const currentFY = currentYear % 100;
+  const nextFY = (currentFY + 1) % 100;
+  return `FY ${currentFY}-${nextFY.toString().padStart(2, '0')}`;
+};
+
 interface UseTableDataProps {
   getMaster: any;
   itemsPerPage?: number;
@@ -45,11 +53,14 @@ export const useTableData = ({
     initialAdvancedFilters || { status: allLabel }
   );
   const [dateFilters, setDateFilters] = useState(
-    initialDateFilters || { startDate: null, endDate: null }
+    initialDateFilters || (() => {
+      const currentFY = getCurrentFinancialYear();
+      return getDateRange(currentFY);
+    })()
   );
   const [activeTab, setActiveTab] = useState<string>(allLabel);
   const [selectedDateRange, setSelectedDateRange] = useState<string | null>(
-    "FY 25-26"
+    getCurrentFinancialYear()
   );
   const [periodType, setPeriodType] = useState<string | null>(null);
   const [trigger, { data, isLoading, isFetching }] = getMaster();

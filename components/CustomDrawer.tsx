@@ -1,7 +1,7 @@
 "use client";
 
 import { ReactNode } from "react";
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerClose } from "@/components/ui/drawer";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { X } from "lucide-react";
@@ -10,7 +10,7 @@ interface CustomDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   title?: string;
-  subtitle?: string;
+  subtitle?: any;
   footer?: boolean;
   children: ReactNode;
   onSave?: () => void | Promise<void>;
@@ -54,7 +54,11 @@ const CustomDrawer = ({
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1">
               {title && <DrawerTitle className="text-xl">{title}</DrawerTitle>}
-              {subtitle && <DrawerDescription>{subtitle}</DrawerDescription>}
+              {subtitle && (
+                <span className="text-sm text-muted-foreground">
+                  {subtitle}
+                </span>
+              )}
             </div>
               <DrawerClose asChild className="h-full">
                 <Button variant="ghost" size="sm">

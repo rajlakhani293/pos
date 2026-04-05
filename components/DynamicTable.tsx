@@ -47,6 +47,21 @@ import { showToast } from "@/lib/toast";
 const MAX_ICONS_TO_SHOW = 3;
 const MAX_CHARS_PER_LINE = 35;
 
+// Generate dynamic financial years
+const generateFinancialYears = (count = 5) => {
+  const currentYear = new Date().getFullYear();
+  const currentFY = currentYear % 100; // Get last 2 digits
+  const years = [];
+  
+  for (let i = 0; i < count; i++) {
+    const fyStart = (currentFY - i) % 100;
+    const fyEnd = (fyStart + 1) % 100;
+    years.push(`FY ${fyStart}-${fyEnd.toString().padStart(2, '0')}`);
+  }
+  
+  return years;
+};
+
 const dateRanges = [
   "Today",
   "Yesterday",
@@ -58,8 +73,7 @@ const dateRanges = [
   "Last Year",
   "Last 30 Days",
   "Last Quarter",
-  "FY 2024-25",
-  "FY 2023-24",
+  ...generateFinancialYears(5), // Generate last 5 financial years
 ];
 
 const TableCellContent = ({ value }: { value: any }) => {
@@ -405,7 +419,13 @@ const DynamicTable = ({
   };
 
   const translateSelectedDateRange = (range: string | null): string => {
-    if (!range) return "FY 25-26";
+    if (!range) {
+      // Return current financial year as default
+      const currentYear = new Date().getFullYear();
+      const currentFY = currentYear % 100;
+      const nextFY = (currentFY + 1) % 100;
+      return `FY ${currentFY}-${nextFY.toString().padStart(2, '0')}`;
+    }
     return range;
   };
 
@@ -465,12 +485,12 @@ const DynamicTable = ({
                       <CalendarIcon className="h-4 w-4 text-muted-foreground" />
                       <span>{translateSelectedDateRange(selectedDateRange)}</span>
                     </div>
-                    {selectedDateRange !== "FY 25-26" ? (
+                    {selectedDateRange !== translateSelectedDateRange(null) ? (
                       <div
                         className="h-4 w-4 bg-white text-muted-foreground hover:text-destructive cursor-pointer flex items-center justify-center"
                         onClick={(e) => {
                           e.stopPropagation();
-                          onChange("dateRange", "FY 25-26");
+                          onChange("dateRange", translateSelectedDateRange(null));
                         }}
                       >
                         <RoundCloseIcon className="size-5 hover:text-red-500" />

@@ -38,7 +38,6 @@ interface VerifyOtpResponse {
 interface RegisterRequest {
   registration_token: string;
   shop_name: string;
-  legal_name?: string;
   user_name: string;
   email?: string;
   password?: string;
@@ -106,7 +105,7 @@ export const auth = createApi({
     // Signup Register Api
     signup: builder.mutation<RegisterResponse, RegisterRequest | FormData>({
       query: (credentials: RegisterRequest | FormData) => ({
-        url: "auth/register-shop",
+        url: "auth/register-company",
         method: "POST",
         body: credentials,
       }),

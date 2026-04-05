@@ -106,11 +106,7 @@ export function LoginForm({
         setOtp(response.data.otp_code)
         toast.success(response.message)
         success = true
-      } else {
-        toast.error(response.message || "Failed to send OTP")
       }
-    } catch (error: any) {
-      if (showToast) toast.error(error.data?.message || "Failed to send OTP. Try again.")
     } finally {
       setIsLoading(false)
     }
@@ -153,6 +149,7 @@ export function LoginForm({
 
   // Centralized Verify OTP logic
   const verifyOTP = useCallback(async (otp: string): Promise<string | null> => {
+    setIsLoading(true)
     try {
       const result = await signinApi({
         phone_number: `+91${mobileNumber}`,
@@ -165,17 +162,11 @@ export function LoginForm({
         if (token) {
           await handlePostAuth(token)
           return token
-        } else {
-          toast.error(result.message || "OTP verification failed")
-          return null
         }
-      } else {
-        toast.error(result.message || "OTP verification failed")
-        return null
       }
-    } catch (error: any) {
-      toast.error(error.data?.message || "OTP verification failed. Try again.")
       return null
+    } finally {
+      setIsLoading(false)
     }
   }, [mobileNumber, signinApi, handlePostAuth])
 
@@ -210,12 +201,7 @@ export function LoginForm({
       if (token) {
         toast.success("User Login successfully!")
         await handlePostAuth(token, "/dashboard")
-      } else {
-        toast.error("Invalid Credentials")
-      }
-    } catch (error: any) {
-      const errorMessage = error?.data?.message || "Something went wrong! Please try again."
-      toast.error(errorMessage)
+      } 
     } finally {
       setIsLoading(false)
     }
