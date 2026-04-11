@@ -320,7 +320,6 @@ export default function SalesDetailPage() {
                   <tr>
                     <th className="text-left p-2">Item</th>
                     <th className="text-right p-2">Sold Qty</th>
-                    <th className="text-right p-2">Returned</th>
                     <th className="text-right p-2">Balance</th>
                     <th className="text-right p-2">Rate</th>
                     <th className="text-right p-2 w-32">Return Qty</th>
@@ -335,13 +334,13 @@ export default function SalesDetailPage() {
                       <tr key={line.id} className="border-t border-gray-100">
                         <td className="p-2">{line.item__item_name || itemLookup[line.item_id || line.item || 0]?.item_name || line.item_name || line.item_description || "Item"}</td>
                         <td className="p-2 text-right">{sold}</td>
-                        <td className="p-2 text-right">{returned}</td>
                         <td className="p-2 text-right">{balance}</td>
                         <td className="p-2 text-right">{toNumber(line.item_rate).toFixed(2)}</td>
                         <td className="p-2">
                           <UniFieldInput
                             type="number"
                             min={0}
+                            max={sold}
                             placeholder="0.00"
                             step={0.01}
                             value={returnQty[line.id] || ""}

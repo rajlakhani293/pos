@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { useTableData } from "@/hooks/useTableData";
 import DynamicTable from "@/components/DynamicTable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
+import { UniFieldInput } from "@/components/ui/unifield-input";
+import { DatePicker } from "@/components/example-date-picker";
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, CreditCard } from "lucide-react";
 import { format } from "date-fns";
 import dayjs from "dayjs";
 import {
@@ -20,7 +21,7 @@ import { settings } from "@/lib/api/settings";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { showToast } from "@/lib/toast";
 
-const CustomerLedgerPage = () => {
+const PaymentPage = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [pickerView, setPickerView] = useState<"month" | "year">("month");
@@ -133,7 +134,7 @@ const CustomerLedgerPage = () => {
     loadPartySummary(selectedParty.party_id);
   }, [drawerOpen, selectedParty?.party_id, monthValue, yearValue, ledgerRefreshKey]);
 
-  const handleRowClick = (row: any) => {
+  const openPaymentDrawer = (row: any) => {
     if (!row?.party_id) return;
     setSelectedParty(row);
     setCreditSummary(null);
@@ -142,6 +143,21 @@ const CustomerLedgerPage = () => {
     setPaymentDate(dayjs().format("YYYY-MM-DD"));
     setDrawerOpen(true);
   };
+
+  const rowActions = useCallback((id: any, record: any) => {
+    return [
+      {
+        key: "pay",
+        label: "Pay",
+        labelText: "Pay",
+        icon: <CreditCard className="size-5" />,
+        onClick: () => {
+          openPaymentDrawer(record);
+        },
+        priority: 1,
+      },
+    ];
+  }, []);
 
   const handleAddPayment = async () => {
     if (!selectedParty?.party_id) {
@@ -175,7 +191,7 @@ const CustomerLedgerPage = () => {
   return (
     <>
       <DynamicTable
-        tableTitle="Customer Ledger"
+        tableTitle="Payments"
         showSearch={true}
         searchTerm={searchTerm}
         showDateRange={false}
@@ -191,8 +207,9 @@ const CustomerLedgerPage = () => {
         onPageChange={setCurrentPage}
         showDelete={false}
         showEdit={false}
+        onRowClick={openPaymentDrawer}
+        rowActions={rowActions}
         isLoading={isLoading}
-        onRowClick={handleRowClick}
         secondaryActionButton={
         <Popover
           open={isPickerOpen}
@@ -311,7 +328,7 @@ const CustomerLedgerPage = () => {
       <CustomDrawer
         isOpen={drawerOpen}
         onClose={() => setDrawerOpen(false)}
-        title="Ledger History"
+        title="Payment"
         subtitle={
           <>
             <div className="flex gap-2">
@@ -328,8 +345,8 @@ const CustomerLedgerPage = () => {
           <div className="text-sm font-semibold">Add Payment</div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div className="space-y-1">
-              <div className="text-xs text-muted-foreground">Amount</div>
-              <Input
+              <UniFieldInput
+                label="Amount"
                 type="number"
                 min="0"
                 step="0.01"
@@ -338,14 +355,12 @@ const CustomerLedgerPage = () => {
                 onChange={(e) => setPaymentAmount(e.target.value)}
               />
             </div>
-            <div className="space-y-1">
-              <div className="text-xs text-muted-foreground">Payment Date</div>
-              <Input
-                type="date"
-                value={paymentDate}
-                onChange={(e) => setPaymentDate(e.target.value)}
-              />
-            </div>
+            <DatePicker
+              label="Payment Date"
+              value={paymentDate ? new Date(paymentDate) : undefined}
+              onChange={(date) => setPaymentDate(date ? dayjs(date).format("YYYY-MM-DD") : "")}
+              placeholder="Pick a date"
+            />
             <div className="flex items-end">
               <Button
                 className="w-full"
@@ -357,8 +372,9 @@ const CustomerLedgerPage = () => {
             </div>
           </div>
           <div className="space-y-1">
-            <div className="text-xs text-muted-foreground">Note</div>
-            <Textarea
+            <UniFieldInput
+              label="Note"
+              as="textarea"
               rows={2}
               placeholder="Optional note"
               value={paymentNote}
@@ -373,7 +389,6 @@ const CustomerLedgerPage = () => {
           </div>
         ) : creditSummary && creditSummary?.days?.length > 0 ? (
           <div className="space-y-5">
-            {/* Calculate totals from all days */}
             {(() => {
               const totalAmount = Number(creditSummary?.month_net || 0);
               return (
@@ -461,4 +476,4 @@ const CustomerLedgerPage = () => {
   );
 };
 
-export default CustomerLedgerPage;
+export default PaymentPage;

@@ -5,7 +5,7 @@ import React, { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { AppSidebar, navData } from "@/components/app-sidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Spinner } from "@/components/ui/spinner";
 import { ModuleTabs } from "@/components/ui/module-tabs";
 
@@ -100,9 +100,9 @@ export default function DashboardLayout({
                 <DialogTitle className="text-xl font-medium tracking-tight text-slate-900">
                   Connection Lost
                 </DialogTitle>
-                <p className="text-sm leading-relaxed text-slate-500">
-                  We're having trouble reaching the server.
-                </p>
+                <DialogDescription className="text-sm leading-relaxed text-slate-500">
+                  We're having trouble reaching the server. Please check your internet connection and try again.
+                </DialogDescription>
               </div>
 
               <div className="relative flex items-center justify-center">

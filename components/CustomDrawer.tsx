@@ -17,6 +17,7 @@ interface CustomDrawerProps {
   saveButtonText?: string;
   cancelButtonText?: string;
   isSaving?: boolean;
+  isLoading?: boolean;
   disabled?: boolean;
   width?: string | number;
 }
@@ -32,6 +33,7 @@ const CustomDrawer = ({
   saveButtonText = "Save",
   cancelButtonText = "Cancel",
   isSaving = false,
+  isLoading = false,
   disabled = false,
   width,
 }: CustomDrawerProps) => {
@@ -69,7 +71,16 @@ const CustomDrawer = ({
         </DrawerHeader>
 
         <div className="flex-1 overflow-y-auto p-4">
-          {children}
+          {isLoading ? (
+            <div className="flex h-full items-center justify-center">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Spinner className="h-5 w-5" />
+               <span className="text-base"> Loading...</span>
+              </div>
+            </div>
+          ) : (
+            children
+          )}
         </div>
 
         {footer && (

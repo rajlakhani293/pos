@@ -23,6 +23,7 @@ interface UseTableDataProps {
   tabList?: string[];
   extraOptions?: any;
   statusMap?: Record<string, number>; // Custom mapping from tab name to status value
+  disableDateFilter?: boolean; // Flag to disable date filtering
 }
 
 export const useTableData = ({
@@ -35,6 +36,7 @@ export const useTableData = ({
   tabList,
   statusMap,
   extraOptions,
+  disableDateFilter = false,
 }: UseTableDataProps) => {
 
   const defaultTab = useMemo(() => [
@@ -53,10 +55,12 @@ export const useTableData = ({
     initialAdvancedFilters || { status: allLabel }
   );
   const [dateFilters, setDateFilters] = useState(
-    initialDateFilters || (() => {
-      const currentFY = getCurrentFinancialYear();
-      return getDateRange(currentFY);
-    })()
+    disableDateFilter
+      ? { startDate: undefined, endDate: undefined }
+      : initialDateFilters || (() => {
+          const currentFY = getCurrentFinancialYear();
+          return getDateRange(currentFY);
+        })()
   );
   const [activeTab, setActiveTab] = useState<string>(allLabel);
   const [selectedDateRange, setSelectedDateRange] = useState<string | null>(
@@ -78,9 +82,10 @@ export const useTableData = ({
     limit: itemsPerPage,
     search: debouncedSearchTerm || undefined,
     status: (advancedFilters?.status !== "All" && advancedFilters?.status !== allLabel) ? advancedFilters?.status : undefined,
-    startDate: dateFilters.startDate,
-    endDate: dateFilters.endDate,
-
+    ...(disableDateFilter ? {} : {
+      startDate: dateFilters.startDate,
+      endDate: dateFilters.endDate,
+    }),
     sortBy: sortConfig?.key || undefined,
     sortDirection: sortConfig?.direction || undefined,
     filter: Object.keys(selectedFilters).length ? selectedFilters : undefined,

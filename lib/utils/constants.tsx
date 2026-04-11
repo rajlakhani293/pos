@@ -17,3 +17,10 @@ export const businessTypeOptions = [
     { value: "12", label: "Agriculture" },
     { value: "13", label: "Others" },
   ]
+
+export const PAYMENT_MODE_CHOICES = [
+    { value: 1, label: 'Cash' },
+    { value: 2, label: 'UPI' },
+    { value: 3, label: 'Partial' },
+    { value: 4, label: 'Bank Transfer' },
+  ];

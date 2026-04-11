@@ -3,8 +3,7 @@
 import { usePathname, useRouter } from "next/navigation"
 import React from "react"
 import { cn } from "@/lib/utils"
-import { PersonPlusIcon, TagIcon, TaxIcon } from "@/components/AppIcon"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { CreditCardIcon, PersonPlusIcon, TagIcon, TaxIcon } from "@/components/AppIcon"
 
 const data = {
   navMain: [
@@ -23,10 +22,15 @@ const data = {
       url: "/settings/parties",
       icon: PersonPlusIcon
     },
+    // {
+    //   title: "Customer Ledger",
+    //   url: "/settings/ledger",
+    //   icon: PersonPlusIcon
+    // },
     {
-      title: "Customer Ledger",
-      url: "/settings/ledger",
-      icon: PersonPlusIcon
+      title: "Payments",
+      url: "/settings/payments",
+      icon: CreditCardIcon
     },
   ]
 }
@@ -48,7 +52,7 @@ export default function SettingsLayout({
   return (
     <div className="flex h-full bg-white">
       {/* Left Navigation Tabs */}
-      <div className="w-70">
+      <div className="w-64 shrink-0">
         <div className="p-4 h-full space-y-4">
           <div className="">
             <h2 className="text-2xl font-semibold text-slate-900">Settings</h2>
@@ -84,7 +88,7 @@ export default function SettingsLayout({
       </div>
 
       {/* Right Content Area */}
-      <div className="flex-1 py-6 pr-6 h-full">
+      <div className="flex-1 py-6 pr-6 h-full overflow-x-auto">
         <main className="rounded-2xl border bg-gray-100/5 p-6 h-full">
           {children}
         </main>

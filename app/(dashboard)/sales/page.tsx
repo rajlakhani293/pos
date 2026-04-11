@@ -8,86 +8,23 @@ import { useRouter } from "next/navigation";
 import dayjs from "dayjs";
 import { showToast } from "@/lib/toast";
 import CustomDrawer from "@/components/CustomDrawer";
-import { Button } from "@/components/ui/button";
 import { Edit } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-
-type InvoiceTransaction = {
-  id: number;
-  item_id: number;
-  item__item_code?: string;
-  item__item_name?: string;
-  item__primary_unit__short_name?: string;
-  item_quantity: number | string;
-  item_rate: number | string;
-  total_amount: number | string;
-  item_description?: string;
-  discount_percentage?: number | string;
-  discount_amount?: number | string;
-  tax_amount?: number | string;
-};
-
-type SalesInvoiceData = {
-  sales: {
-    id: number;
-    sales_code?: string;
-    created_at?: string;
-    subtotal?: number | string;
-    tax_amount?: number | string;
-    discount_percentage?: number | string;
-    discount_amount?: number | string;
-    total_amount?: number | string;
-    paid_amount?: number | string;
-    balance_amount?: number | string;
-    payment_mode?: number | string;
-    payment_mode_label?: string;
-    notes?: string;
-  };
-  party?: {
-    id?: number;
-    name?: string;
-    phone_number?: string;
-    email?: string;
-    address?: string;
-    pincode?: string;
-    city?: string;
-    state?: string;
-    country?: string;
-  };
-  shop?: {
-    id?: number;
-    shop_name?: string;
-    phone_number?: string;
-    email?: string;
-    address?: string;
-    pincode?: string;
-    city?: string;
-    state?: string;
-    country?: string;
-    tax_no?: string;
-    pan_no?: string;
-    logo_image?: string;
-    website_url?: string;
-  };
-  transactions: InvoiceTransaction[];
-};
+import { PAYMENT_MODE_CHOICES } from "@/lib/utils/constants";
 
 const toNumber = (value: number | string | undefined | null) => Number(value || 0);
 const formatMoney = (value: number | string | undefined | null) => `₹${toNumber(value).toFixed(2)}`;
+
+const getPaymentModeLabel = (mode: number) => {
+  const paymentMode = PAYMENT_MODE_CHOICES.find(choice => choice.value === mode);
+  return paymentMode?.label || 'Unknown';
+};
 
 const Sales = () => {
   const router = useRouter();
   const [getSalesView] = sales.useGetSalesViewMutation();
   const [invoiceOpen, setInvoiceOpen] = useState(false);
-  const [invoiceData, setInvoiceData] = useState<SalesInvoiceData | null>(null);
-
-  // Payment mode choices mapping
-  const PAYMENT_MODE_CHOICES = [
-    { value: 1, label: 'Cash' },
-    { value: 2, label: 'UPI' },
-    { value: 3, label: 'Partial' },
-    { value: 4, label: 'Bank Transfer' },
-  ];
+  const [invoiceData, setInvoiceData] = useState<any>(null);
 
   const {
     orders,
@@ -117,7 +54,7 @@ const Sales = () => {
     setInvoiceOpen(true);
     setInvoiceData(null);
     try {
-      const result = await getSalesView({ id: Number(record.id) }).unwrap() as { data?: SalesInvoiceData };
+      const result:any = await getSalesView({ id: Number(record.id) }).unwrap();
       setInvoiceData(result?.data || null);
     } catch (error: any) {
       const errorData = error?.data;
@@ -231,22 +168,22 @@ const Sales = () => {
         onClose={() => setInvoiceOpen(false)}
         title="Sales Invoice"
         subtitle={
-          invoiceData?.sales?.sales_code
-            ? `Invoice ${invoiceData.sales.sales_code}`
+          invoiceData?.sales_code
+            ? `Invoice ${invoiceData.sales_code}`
             : "Invoice details"
         }
         footer={false}
         width={700}
+        isLoading={!invoiceData}
       >
-        {invoiceData ? (
+        <>
           <div className="space-y-6">
             <div className="text-sm text-muted-foreground">
-              {invoiceData.sales?.created_at &&
-                `Created: ${dayjs(invoiceData.sales.created_at).format("DD MMM YYYY, hh:mm A")}`
+              {invoiceData?.sales_date &&
+                `Created: ${dayjs(invoiceData.sales_date).format("DD MMM YYYY, hh:mm A")}`
               }
             </div>
             <div className="w-full overflow-hidden border rounded-lg">
-
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -259,16 +196,11 @@ const Sales = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {invoiceData.transactions?.length ? (
-                    invoiceData.transactions.map((line) => (
+                  {invoiceData?.transactions?.length ? (
+                    invoiceData.transactions.map((line: any) => (
                       <TableRow key={line.id}>
                         <TableCell>
-                          <div className="font-medium">{line.item__item_name || line.item_description || "Item"}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {[line.item__item_code, line.item__primary_unit__short_name && `Unit: ${line.item__primary_unit__short_name}`]
-                              .filter(Boolean)
-                              .join(" • ")}
-                          </div>
+                          <div className="font-medium">{line.item_description || `Item ID: ${line.item_id}`}</div>
                         </TableCell>
                         <TableCell className="text-right">{toNumber(line.item_quantity).toFixed(2)}</TableCell>
                         <TableCell className="text-right">{formatMoney(line.item_rate)}</TableCell>
@@ -293,38 +225,61 @@ const Sales = () => {
             <div className="">
               <div className="rounded-lg border p-4 space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Subtotal</span>
-                  <span className="font-medium">{formatMoney(invoiceData.sales?.subtotal)}</span>
+                  <span className="text-muted-foreground">Payment Mode</span>
+                  <span className="font-medium">{getPaymentModeLabel(invoiceData?.payment_mode)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Tax</span>
-                  <span className="font-medium">{formatMoney(invoiceData.sales?.tax_amount)}</span>
+                  <span className="text-muted-foreground">Customer</span>
+                  <span className="font-medium">{invoiceData?.party?.name}</span>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Discount</span>
-                  <span className="font-medium">{formatMoney(invoiceData.sales?.discount_amount)}</span>
-                </div>
-                <div className="flex justify-between text-base font-semibold">
-                  <span>Total</span>
-                  <span>{formatMoney(invoiceData.sales?.total_amount)}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Paid</span>
-                  <span className="font-medium">{formatMoney(invoiceData.sales?.paid_amount)}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Balance</span>
-                  <span className="font-medium">{formatMoney(invoiceData.sales?.balance_amount)}</span>
-                </div>
+                {invoiceData?.party?.phone_number && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Phone</span>
+                    <span className="font-medium">{invoiceData.party.phone_number}</span>
+                  </div>
+                )}
               </div>
             </div>
 
-          </div>
-        ) : (
-          <div className="flex h-40 items-center justify-center p-6 text-sm text-muted-foreground">
-            Loading invoice details...
-          </div>
-        )}
+            <div className="">
+              <div className="rounded-lg border p-4 space-y-2">
+                {(invoiceData?.tax_amount && invoiceData?.tax_amount > 0) || (invoiceData?.discount_amount && invoiceData?.discount_amount > 0) ? (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Subtotal</span>
+                    <span className="font-medium">{formatMoney(invoiceData?.subtotal)}</span>
+                  </div>
+                ) : null}
+                {invoiceData?.tax_amount && invoiceData?.tax_amount > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Tax</span>
+                  <span className="font-medium">{formatMoney(invoiceData?.tax_amount)}</span>
+                </div>
+                )}
+                {invoiceData?.discount_amount && invoiceData?.discount_amount > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Discount</span>
+                  <span className="font-medium">{formatMoney(invoiceData?.discount_amount)}</span>
+                </div>
+                )}
+                <div className="flex justify-between text-base font-semibold">
+                  <span>Total</span>
+                  <span>{formatMoney(invoiceData?.total_amount)}</span>
+                </div>
+                {invoiceData?.paid_amount && invoiceData?.paid_amount > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Paid</span>
+                  <span className="font-medium">{formatMoney(invoiceData?.paid_amount)}</span>
+                </div>
+                )}
+                {invoiceData?.payment_mode === 3 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Balance</span>
+                  <span className="font-medium">{formatMoney(invoiceData?.balance_amount)}</span>
+                </div>
+                )}
+              </div>
+            </div>
+          </div></>
       </CustomDrawer>
     </>
   );

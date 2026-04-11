@@ -1,15 +1,18 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useTableData } from "@/hooks/useTableData";
 import DynamicTable from "@/components/DynamicTable";
 import { settings } from "@/lib/api/settings";
 import { PartyForm } from "./createUpdate";
+import { DueHistoryDrawer } from "./DueHistoryDrawer";
 
 const Parties = () => {
   const [isAddEntityOpen, setAddEntityOpen] = useState<boolean>(false);
   const [selectedId, setSelectedId] = useState<any>(null);
   const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [selectedParty, setSelectedParty] = useState<any>(null);
   const {
     orders,
     totalItems,
@@ -28,6 +31,7 @@ const Parties = () => {
     getMaster: settings.useGetPartiesDataMutation,
     itemsPerPage: 20,
     extraOptions: { refreshTrigger },
+    disableDateFilter: true,
   });
 
   const handleCreateItem = () => {
@@ -49,6 +53,27 @@ const Parties = () => {
     setRefreshTrigger(prev => prev + 1);
     handleClose();
   };
+
+  const openLedgerDrawer = (row: any) => {
+    setSelectedParty(row);
+    setDrawerOpen(true);
+  };
+
+  const renderCurrentBalance = (value: any, record: any) => {
+    const balanceType = record?.row?.balance_type;
+    const currentBalance = record?.row?.current_balance;
+
+    const balanceColor = balanceType === 2 ? 'text-green-600 dark:text-green-400' : balanceType === 1 ? 'text-red-600 dark:text-red-400' : '';
+
+    return (
+      <div className="flex flex-col">
+        <button className={`font-medium ${balanceColor} cursor-pointer`} onClick={() => openLedgerDrawer(record.row)}>
+          {currentBalance || '0'}
+        </button>
+      </div>
+    );
+  };
+
 
   const columns = useMemo(
     () => [
@@ -87,44 +112,7 @@ const Parties = () => {
       {
         key: "current_balance",
         title: "Current Balance",
-        render: (value: any, record: any) => {
-          const balance = parseFloat(value || 0);
-          const balanceType = record.row.balance_type;
-          
-          if (!balanceType) {
-            return (
-              <div className="font-medium">
-                ₹{balance.toFixed(2)}
-              </div>
-            );
-          }
-          
-          // Type 1: Debit (Receivable) - Positive amount
-          // Type 2: Credit (Payable) - Negative amount
-          const isNegative = balanceType === 2;
-          const displayAmount = isNegative ? -Math.abs(balance) : Math.abs(balance);
-          const colorClass = isNegative ? "text-red-600" : "text-green-600";
-          
-          const balanceTypeLabels: { [key: number]: string } = {
-            1: "Debit (Pending/Receivable)",
-            2: "Credit (Advance/Payable)"
-          };
-          
-          const label = balanceTypeLabels[balanceType] || "";
-          
-          return (
-            <div className="space-y-1">
-              <div className={`font-medium ${colorClass}`}>
-                {isNegative ? "-" : ""}₹{Math.abs(displayAmount).toFixed(2)}
-              </div>
-              {/* {label && (
-                <div className="text-xs text-muted-foreground">
-                  {label}
-                </div>
-              )} */}
-            </div>
-          );
-        }
+        render: renderCurrentBalance
       },
     ],
     [currentPage, itemsPerPage]
@@ -137,8 +125,8 @@ const Parties = () => {
           title="Add Party"
           showSearch={true}
           searchTerm={searchTerm}
-          showDateRange={true}
-          selectedDateRange={selectedDateRange}
+          showDateRange={false}
+          // selectedDateRange={selectedDateRange}
           dateFilters={dateFilters}
           setAddEntityOpen={handleCreateItem}
           onFilterChange={handleFilterChange}
@@ -162,6 +150,12 @@ const Parties = () => {
         onSuccess={handleSuccess}
         id={selectedId?.id}
         title={selectedId ? `Edit Party` : `Add Party`}
+      />
+
+      <DueHistoryDrawer
+        isOpen={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        party={selectedParty}
       />
     </>
   );

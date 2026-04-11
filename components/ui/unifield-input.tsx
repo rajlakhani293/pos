@@ -14,6 +14,9 @@ interface UniFieldInputProps extends Omit<React.InputHTMLAttributes<HTMLInputEle
   suffix?: React.ReactNode
   as?: 'input' | 'textarea'
   rows?: number
+  min?: number | string
+  max?: number | string
+  maxLength?: number
 }
 
 export const UniFieldInput = React.forwardRef<HTMLInputElement, UniFieldInputProps>(
@@ -27,6 +30,9 @@ export const UniFieldInput = React.forwardRef<HTMLInputElement, UniFieldInputPro
     suffix,
     as = 'input',
     rows = 3,
+    min,
+    max,
+    maxLength,
     onChange,
     ...props 
   }, ref) => {
@@ -35,6 +41,36 @@ export const UniFieldInput = React.forwardRef<HTMLInputElement, UniFieldInputPro
     const handleWheel = (e: React.WheelEvent<HTMLInputElement>) => {
       if (props.type === 'number') {
         e.currentTarget.blur()
+      }
+    }
+    
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (props.type === 'number' && (min !== undefined || max !== undefined)) {
+        const value = parseFloat(e.target.value) || 0;
+        let validatedValue = value;
+        
+        // Apply min validation
+        if (min !== undefined && value < parseFloat(min.toString())) {
+          validatedValue = parseFloat(min.toString());
+        }
+        
+        // Apply max validation
+        if (max !== undefined && value > parseFloat(max.toString())) {
+          validatedValue = parseFloat(max.toString());
+        }
+        
+        // Update input value to show validated value
+        e.target.value = validatedValue.toString();
+        
+        // Call original onChange with validated value
+        if (onChange) {
+          onChange(e);
+        }
+      } else {
+        // For non-number inputs, just call original onChange
+        if (onChange) {
+          onChange(e);
+        }
       }
     }
     
@@ -82,7 +118,10 @@ export const UniFieldInput = React.forwardRef<HTMLInputElement, UniFieldInputPro
               )}
               aria-invalid={error ? true : undefined}
               {...props}
-              onChange={onChange as any}
+              min={min}
+              max={max}
+              maxLength={maxLength}
+              onChange={handleChange as any}
               onWheel={handleWheel}
             />
           )}
