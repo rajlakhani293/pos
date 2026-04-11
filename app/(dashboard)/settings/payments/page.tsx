@@ -1,54 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useMemo } from "react";
 import { useTableData } from "@/hooks/useTableData";
 import DynamicTable from "@/components/DynamicTable";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { UniFieldInput } from "@/components/ui/unifield-input";
-import { DatePicker } from "@/components/example-date-picker";
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, CreditCard } from "lucide-react";
-import { format } from "date-fns";
-import dayjs from "dayjs";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import CustomDrawer from "@/components/CustomDrawer";
-import { Spinner } from "@/components/ui/spinner";
 import { settings } from "@/lib/api/settings";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { showToast } from "@/lib/toast";
 
 const PaymentPage = () => {
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [isPickerOpen, setIsPickerOpen] = useState(false);
-  const [pickerView, setPickerView] = useState<"month" | "year">("month");
-  const [displayYear, setDisplayYear] = useState(selectedDate.getFullYear());
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [selectedParty, setSelectedParty] = useState<any>(null);
-  const [creditSummary, setCreditSummary] = useState<any>(null);
-  const [creditLoading, setCreditLoading] = useState(false);
-  const [getPartyCreditDays] = settings.useGetPartyCreditDaysMutation();
-  const [addPartyPayment, { isLoading: paymentSaving }] = settings.useAddPartyPaymentMutation();
-  const [paymentAmount, setPaymentAmount] = useState<string>("");
-  const [paymentNote, setPaymentNote] = useState<string>("");
-  const [paymentDate, setPaymentDate] = useState<string>(dayjs().format("YYYY-MM-DD"));
-  const [ledgerRefreshKey, setLedgerRefreshKey] = useState(0);
-  
-  const monthValue = selectedDate.getMonth() + 1; 
-  const yearValue = selectedDate.getFullYear();
-  const decadeStart = Math.floor(displayYear / 10) * 10;
-  const yearGrid = Array.from({ length: 12 }, (_, index) => decadeStart - 1 + index);
-  const monthLabels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  const toNumber = (value: number | string | undefined | null) => Number(value || 0);
-  const formatMoney = (value: number | string | undefined | null) => `₹${toNumber(value).toFixed(2)}`;
-  const formatSignedMoney = (value: number | string | undefined | null) => {
-    const val = toNumber(value);
-    const sign = val < 0 ? "-" : "";
-    return `${sign}₹${Math.abs(val).toFixed(2)}`;
-  };
+  const formatMoney = (value: number | string | undefined | null) =>
+    `₹${Number(value || 0).toFixed(2)}`;
 
   const {
     orders,
@@ -63,13 +22,8 @@ const PaymentPage = () => {
     searchTerm,
     itemsPerPage,
   } = useTableData({
-    getMaster: settings.useGetLedgerTransactionsMutation,
+    getMaster: settings.useGetPaymentHistoryMutation,
     itemsPerPage: 20,
-    extraOptions: {
-      month: monthValue,
-      year: yearValue,
-      refreshKey: ledgerRefreshKey,
-    },
   });
 
   const columns = useMemo(
@@ -79,400 +33,45 @@ const PaymentPage = () => {
         title: "Party",
       },
       {
-        key: "party__phone_number",
-        title: "Phone",
+        key: "date",
+        title: "Date",
+        render: (value: any) => (value ? new Date(value).toLocaleDateString() : "-"),
       },
       {
-        key: "party__email",
-        title: "Email",
-      },
-      {
-        key: "total_amount",
-        title: "Total",
-        render: (value: any) => Number(value || 0).toFixed(2),
-      },
-      {
-        key: "total_paid",
-        title: "Paid",
-        render: (value: any) => Number(value || 0).toFixed(2),
-      },
-      {
-        key: "due_amount",
-        title: "Due",
+        key: "amount",
+        title: "Amount",
         render: (value: any) => (
-          <span className="text-red-600 font-semibold">
-            {Number(value || 0).toFixed(2)}
-          </span>
+          <span className="text-emerald-600 font-semibold">{formatMoney(value)}</span>
         ),
       },
       {
-        key: "party__current_balance",
-        title: "Current Balance",
-        render: (value: any) => Number(value || 0).toFixed(2),
+        key: "note",
+        title: "Note",
       },
     ],
     []
   );
 
-  const loadPartySummary = async (partyId: number) => {
-    setCreditLoading(true);
-    try {
-      const result = await getPartyCreditDays({
-        id: partyId,
-        payLoad: { month: monthValue, year: yearValue },
-      }).unwrap() as { data?: any };
-      const monthKey = `${yearValue}-${String(monthValue).padStart(2, "0")}`;
-      const monthBlock = result?.data?.months?.find((m: any) => m?.month === monthKey);
-      setCreditSummary(monthBlock || null);
-    } finally {
-      setCreditLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (!drawerOpen || !selectedParty?.party_id) return;
-    loadPartySummary(selectedParty.party_id);
-  }, [drawerOpen, selectedParty?.party_id, monthValue, yearValue, ledgerRefreshKey]);
-
-  const openPaymentDrawer = (row: any) => {
-    if (!row?.party_id) return;
-    setSelectedParty(row);
-    setCreditSummary(null);
-    setPaymentAmount("");
-    setPaymentNote("");
-    setPaymentDate(dayjs().format("YYYY-MM-DD"));
-    setDrawerOpen(true);
-  };
-
-  const rowActions = useCallback((id: any, record: any) => {
-    return [
-      {
-        key: "pay",
-        label: "Pay",
-        labelText: "Pay",
-        icon: <CreditCard className="size-5" />,
-        onClick: () => {
-          openPaymentDrawer(record);
-        },
-        priority: 1,
-      },
-    ];
-  }, []);
-
-  const handleAddPayment = async () => {
-    if (!selectedParty?.party_id) {
-      showToast.error("Select a party first");
-      return;
-    }
-
-    const amountNumber = Number(paymentAmount || 0);
-    if (!amountNumber || amountNumber <= 0) {
-      showToast.error("Enter a valid payment amount");
-      return;
-    }
-
-    try {
-      await addPartyPayment({
-        party_id: selectedParty.party_id,
-        amount: amountNumber,
-        note: paymentNote?.trim() || undefined,
-        payment_date: paymentDate || undefined,
-      }).unwrap();
-      showToast.success("Payment recorded successfully");
-      setPaymentAmount("");
-      setPaymentNote("");
-      setLedgerRefreshKey((prev) => prev + 1);
-      await loadPartySummary(selectedParty.party_id);
-    } catch (error: any) {
-      showToast.error(error?.data?.message || "Failed to record payment");
-    }
-  };
-
   return (
-    <>
-      <DynamicTable
-        tableTitle="Payments"
-        showSearch={true}
-        searchTerm={searchTerm}
-        showDateRange={false}
-        onFilterChange={handleFilterChange}
-        data={orders}
-        columns={columns}
-        sortConfig={sortConfig}
-        onSort={handleSort}
-        sortableFields={sortableFields}
-        currentPage={currentPage}
-        itemsPerPage={itemsPerPage}
-        totalItems={totalItems}
-        onPageChange={setCurrentPage}
-        showDelete={false}
-        showEdit={false}
-        onRowClick={openPaymentDrawer}
-        rowActions={rowActions}
-        isLoading={isLoading}
-        secondaryActionButton={
-        <Popover
-          open={isPickerOpen}
-          onOpenChange={(open) => {
-            setIsPickerOpen(open);
-            if (open) {
-              setDisplayYear(selectedDate.getFullYear());
-              setPickerView("month");
-            }
-          }}
-        >
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              className="h-9 justify-start gap-2 px-3 text-left font-normal"
-            >
-              <CalendarIcon className="h-4 w-4" />
-              {format(selectedDate, "MMM yyyy")}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-72 p-0" align="end">
-            {pickerView === "month" ? (
-              <div className="bg-background">
-                <div className="flex items-center justify-between border-b border-border px-3 py-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setDisplayYear((prev) => prev - 1)}
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    className="text-sm font-semibold"
-                    onClick={() => setPickerView("year")}
-                  >
-                    {displayYear}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setDisplayYear((prev) => prev + 1)}
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
-                <div className="grid grid-cols-3 gap-2 p-3">
-                  {monthLabels.map((label, index) => {
-                    const isSelected =
-                      selectedDate.getFullYear() === displayYear &&
-                      selectedDate.getMonth() === index;
-
-                    return (
-                      <Button
-                        key={label}
-                        variant={isSelected ? "default" : "ghost"}
-                        className="h-10 text-sm"
-                        onClick={() => {
-                          setSelectedDate(new Date(displayYear, index, 1));
-                          setIsPickerOpen(false);
-                        }}
-                      >
-                        {label}
-                      </Button>
-                    );
-                  })}
-                </div>
-              </div>
-            ) : (
-              <div className="bg-background">
-                <div className="flex items-center justify-between border-b border-border px-3 py-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setDisplayYear((prev) => prev - 10)}
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  <div className="text-sm font-semibold">{decadeStart}-{decadeStart + 9}</div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setDisplayYear((prev) => prev + 10)}
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
-                <div className="grid grid-cols-3 gap-2 p-3">
-                  {yearGrid.map((year) => {
-                    const isOutside = year < decadeStart || year > decadeStart + 9;
-                    const isSelected = year === selectedDate.getFullYear();
-
-                    return (
-                      <Button
-                        key={year}
-                        variant={isSelected ? "default" : "ghost"}
-                        className={isOutside ? "h-10 text-sm text-muted-foreground" : "h-10 text-sm"}
-                        disabled={isOutside}
-                        onClick={() => {
-                          setDisplayYear(year);
-                          setPickerView("month");
-                        }}
-                      >
-                        {year}
-                      </Button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </PopoverContent>
-        </Popover>
-        }
-      />
-
-      <CustomDrawer
-        isOpen={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-        title="Payment"
-        subtitle={
-          <>
-            <div className="flex gap-2">
-              <span className="font-medium">{selectedParty?.party__name || ""}</span>
-              <span className="text-muted-foreground">-</span>
-              <div className="font-medium text-left">{dayjs(selectedDate).format("MMM, YYYY")}</div>
-            </div>
-          </>
-        }
-        footer={false}
-        width={700}
-      >
-        <div className="mb-4 rounded-lg border p-4 space-y-3">
-          <div className="text-sm font-semibold">Add Payment</div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div className="space-y-1">
-              <UniFieldInput
-                label="Amount"
-                type="number"
-                min="0"
-                step="0.01"
-                placeholder="Enter amount"
-                value={paymentAmount}
-                onChange={(e) => setPaymentAmount(e.target.value)}
-              />
-            </div>
-            <DatePicker
-              label="Payment Date"
-              value={paymentDate ? new Date(paymentDate) : undefined}
-              onChange={(date) => setPaymentDate(date ? dayjs(date).format("YYYY-MM-DD") : "")}
-              placeholder="Pick a date"
-            />
-            <div className="flex items-end">
-              <Button
-                className="w-full"
-                onClick={handleAddPayment}
-                disabled={paymentSaving}
-              >
-                {paymentSaving ? "Saving..." : "Add Payment"}
-              </Button>
-            </div>
-          </div>
-          <div className="space-y-1">
-            <UniFieldInput
-              label="Note"
-              as="textarea"
-              rows={2}
-              placeholder="Optional note"
-              value={paymentNote}
-              onChange={(e) => setPaymentNote(e.target.value)}
-            />
-          </div>
-        </div>
-
-        {creditLoading ? (
-          <div className="flex h-40 items-center justify-center">
-            <Spinner />
-          </div>
-        ) : creditSummary && creditSummary?.days?.length > 0 ? (
-          <div className="space-y-5">
-            {(() => {
-              const totalAmount = Number(creditSummary?.month_net || 0);
-              return (
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="rounded-lg border p-3">
-                    <div className="text-xs text-muted-foreground">Total</div>
-                    <div className={`text-base font-semibold ${totalAmount < 0 ? "text-emerald-600" : "text-red-600"}`}>
-                      {formatSignedMoney(totalAmount)}
-                    </div>
-                  </div>
-                  <div className="rounded-lg border p-3">
-                    <div className="text-xs text-muted-foreground">Transactions</div>
-                    <div className="text-base font-semibold">
-                      {creditSummary.days?.reduce((sum: number, day: any) => sum + (day.transactions?.length || 0), 0)}
-                    </div>
-                  </div>
-                  <div className="rounded-lg border p-3">
-                    <div className="text-xs text-muted-foreground">Days</div>
-                    <div className="text-base font-semibold">{creditSummary.days?.length || 0}</div>
-                  </div>
-                </div>
-              );
-            })()}
-
-            <div className="space-y-4">
-              <Accordion type="single" collapsible className="w-full">
-                {creditSummary.days?.map((day: any, dayIndex: number) => (
-                  <AccordionItem key={`${day.date}-${dayIndex}`} value={`${day.date}-${dayIndex}`}>
-                    <AccordionTrigger className="hover:no-underline">
-                      <div className="flex items-center justify-between w-full pr-4">
-                        <div className="font-medium text-left">{dayjs(day.date).format("DD MMM, YYYY")}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {formatSignedMoney(day.total_amount)} ({day.transactions?.length || 0} transactions)
-                        </div>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      <div className="space-y-3 pt-2">
-                        <div className="space-y-2">
-                          {day.transactions?.map((transaction: any, index: number) => (
-                            (() => {
-                              const amountValue = Number(transaction.amount || 0);
-                              const isPayment = amountValue < 0;
-                              const amountClass = isPayment ? "text-emerald-600" : "text-red-600";
-                              const title = transaction.sales_code || (isPayment ? "Payment" : "Transaction");
-                              return (
-                            <div
-                              key={`${day.date}-${transaction.sales_code}-${index}`}
-                              className="rounded-lg border p-3 space-y-2"
-                            >
-                              <div className="flex items-center justify-between">
-                                <div className="font-medium">
-                                  {title}
-                                </div>
-                                <div className={`${amountClass} font-semibold`}>
-                                  {formatSignedMoney(amountValue)}
-                                </div>
-                              </div>
-                              <div className="text-sm text-muted-foreground">
-                                {transaction.note || (isPayment ? "Payment received" : "Sales invoice")}
-                              </div>
-                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                <span>{dayjs(day.date).format("DD MMM, YYYY")}</span>
-                                {transaction.sales_code && <span>• {transaction.sales_code}</span>}
-                              </div>
-                            </div>
-                              );
-                            })()
-                          ))}
-                        </div>
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
-            </div>
-          </div>
-        ) : (
-          <div className="flex h-40 items-center justify-center text-muted-foreground">
-            No data available for selected period
-          </div>
-        )}
-      </CustomDrawer>
-    </>
+    <DynamicTable
+      tableTitle="Payments"
+      showSearch={true}
+      searchTerm={searchTerm}
+      showDateRange={true}
+      onFilterChange={handleFilterChange}
+      data={orders}
+      columns={columns}
+      sortConfig={sortConfig}
+      onSort={handleSort}
+      sortableFields={sortableFields}
+      currentPage={currentPage}
+      itemsPerPage={itemsPerPage}
+      totalItems={totalItems}
+      onPageChange={setCurrentPage}
+      showDelete={false}
+      showEdit={false}
+      isLoading={isLoading}
+    />
   );
 };
 

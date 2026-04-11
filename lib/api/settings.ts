@@ -31,6 +31,7 @@ const endpointsConfig = {
   getLedgerTransactions: { query: postMutation("party-due-list") },
   getPartyCreditDays: { query: ({ id, payLoad }: { id: number; payLoad: any }) => postMutation(`party-credit-summary/${id}`)(payLoad) },
   addPartyPayment: { query: createMutation("party-payment") },
+  getPaymentHistory: { query: postMutation("payments/get-transactions") },
 
   
 }
