@@ -1,18 +1,24 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback } from "react";
 import { useTableData } from "@/hooks/useTableData";
 import DynamicTable from "@/components/DynamicTable";
 import { settings } from "@/lib/api/settings";
 import { PartyForm } from "./createUpdate";
 import { DueHistoryDrawer } from "./DueHistoryDrawer";
+import { PaymentDrawer } from "./PaymentDrawer";
+import { showToast } from "@/lib/toast";
 
 const Parties = () => {
   const [isAddEntityOpen, setAddEntityOpen] = useState<boolean>(false);
   const [selectedId, setSelectedId] = useState<any>(null);
   const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [paymentDrawerOpen, setPaymentDrawerOpen] = useState(false);
   const [selectedParty, setSelectedParty] = useState<any>(null);
+  const [paymentAmount, setPaymentAmount] = useState<string>("");
+  const [paymentNote, setPaymentNote] = useState<string>("");
+  const [addPartyPayment, { isLoading: paymentSaving }] = settings.useAddPartyPaymentMutation();
   const {
     orders,
     totalItems,
@@ -57,7 +63,62 @@ const Parties = () => {
   const openLedgerDrawer = (row: any) => {
     setSelectedParty(row);
     setDrawerOpen(true);
+    // Blur the active element to prevent aria-hidden accessibility issue
+    (document.activeElement as HTMLElement)?.blur();
   };
+
+  const openPaymentDrawer = (row: any) => {
+    setSelectedParty(row);
+    setPaymentAmount("");
+    setPaymentNote("");
+    setPaymentDrawerOpen(true);
+    // Blur the active element to prevent aria-hidden accessibility issue
+    (document.activeElement as HTMLElement)?.blur();
+  };
+
+  const handleAddPayment = async () => {
+    if (!selectedParty?.id) {
+      showToast.error("Select a party first");
+      return;
+    }
+
+    const amountNumber = Number(paymentAmount || 0);
+    if (!amountNumber || amountNumber <= 0) {
+      showToast.error("Enter a valid payment amount");
+      return;
+    }
+
+    try {
+      await addPartyPayment({
+        party_id: selectedParty.id,
+        amount: amountNumber,
+        note: paymentNote?.trim() || undefined,
+      }).unwrap();
+      showToast.success("Payment recorded successfully");
+      setPaymentAmount("");
+      setPaymentNote("");
+      setPaymentDrawerOpen(false);
+      setRefreshTrigger(prev => prev + 1);
+    } catch (error: any) {
+      showToast.error(error?.data?.message || "Failed to record payment");
+    }
+  };
+
+  const rowActions = useCallback((id: any, record: any) => {
+    return [
+      {
+        key: "pay",
+        label: "Pay",
+        labelText: "Pay",
+        icon: <span className="text-green-600 font-semibold text-sm">₹</span>,
+        onClick: (e?: React.MouseEvent<HTMLButtonElement>) => {
+          e?.stopPropagation();
+          openPaymentDrawer(record);
+        },
+        priority: 0
+      }
+    ];
+  }, []);
 
   const renderCurrentBalance = (value: any, record: any) => {
     const balanceType = record?.row?.balance_type;
@@ -142,6 +203,7 @@ const Parties = () => {
           showDelete={true}
           isLoading={isLoading}
           onEdit={handleEditItem}
+          rowActions={rowActions}
         />
 
       <PartyForm
@@ -156,6 +218,18 @@ const Parties = () => {
         isOpen={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         party={selectedParty}
+      />
+
+      <PaymentDrawer
+        isOpen={paymentDrawerOpen}
+        onClose={() => setPaymentDrawerOpen(false)}
+        partyName={selectedParty?.name || ""}
+        paymentAmount={paymentAmount}
+        paymentNote={paymentNote}
+        onPaymentAmountChange={setPaymentAmount}
+        onPaymentNoteChange={setPaymentNote}
+        onAddPayment={handleAddPayment}
+        paymentSaving={paymentSaving}
       />
     </>
   );

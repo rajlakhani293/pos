@@ -6,14 +6,8 @@ import DynamicTable from "@/components/DynamicTable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
-import { format } from "date-fns";
+import { MonthYearPicker } from "@/components/date-picker";
 import dayjs from "dayjs";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import CustomDrawer from "@/components/CustomDrawer";
 import { Spinner } from "@/components/ui/spinner";
 import { settings } from "@/lib/api/settings";
@@ -22,9 +16,6 @@ import { showToast } from "@/lib/toast";
 
 const CustomerLedgerPage = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [isPickerOpen, setIsPickerOpen] = useState(false);
-  const [pickerView, setPickerView] = useState<"month" | "year">("month");
-  const [displayYear, setDisplayYear] = useState(selectedDate.getFullYear());
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedParty, setSelectedParty] = useState<any>(null);
   const [creditSummary, setCreditSummary] = useState<any>(null);
@@ -33,14 +24,10 @@ const CustomerLedgerPage = () => {
   const [addPartyPayment, { isLoading: paymentSaving }] = settings.useAddPartyPaymentMutation();
   const [paymentAmount, setPaymentAmount] = useState<string>("");
   const [paymentNote, setPaymentNote] = useState<string>("");
-  const [paymentDate, setPaymentDate] = useState<string>(dayjs().format("YYYY-MM-DD"));
   const [ledgerRefreshKey, setLedgerRefreshKey] = useState(0);
-  
-  const monthValue = selectedDate.getMonth() + 1; 
+
+  const monthValue = selectedDate.getMonth() + 1;
   const yearValue = selectedDate.getFullYear();
-  const decadeStart = Math.floor(displayYear / 10) * 10;
-  const yearGrid = Array.from({ length: 12 }, (_, index) => decadeStart - 1 + index);
-  const monthLabels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   const toNumber = (value: number | string | undefined | null) => Number(value || 0);
   const formatMoney = (value: number | string | undefined | null) => `₹${toNumber(value).toFixed(2)}`;
   const formatSignedMoney = (value: number | string | undefined | null) => {
@@ -139,7 +126,6 @@ const CustomerLedgerPage = () => {
     setCreditSummary(null);
     setPaymentAmount("");
     setPaymentNote("");
-    setPaymentDate(dayjs().format("YYYY-MM-DD"));
     setDrawerOpen(true);
   };
 
@@ -160,7 +146,6 @@ const CustomerLedgerPage = () => {
         party_id: selectedParty.party_id,
         amount: amountNumber,
         note: paymentNote?.trim() || undefined,
-        payment_date: paymentDate || undefined,
       }).unwrap();
       showToast.success("Payment recorded successfully");
       setPaymentAmount("");
@@ -194,117 +179,7 @@ const CustomerLedgerPage = () => {
         isLoading={isLoading}
         onRowClick={handleRowClick}
         secondaryActionButton={
-        <Popover
-          open={isPickerOpen}
-          onOpenChange={(open) => {
-            setIsPickerOpen(open);
-            if (open) {
-              setDisplayYear(selectedDate.getFullYear());
-              setPickerView("month");
-            }
-          }}
-        >
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              className="h-9 justify-start gap-2 px-3 text-left font-normal"
-            >
-              <CalendarIcon className="h-4 w-4" />
-              {format(selectedDate, "MMM yyyy")}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-72 p-0" align="end">
-            {pickerView === "month" ? (
-              <div className="bg-background">
-                <div className="flex items-center justify-between border-b border-border px-3 py-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setDisplayYear((prev) => prev - 1)}
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    className="text-sm font-semibold"
-                    onClick={() => setPickerView("year")}
-                  >
-                    {displayYear}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setDisplayYear((prev) => prev + 1)}
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
-                <div className="grid grid-cols-3 gap-2 p-3">
-                  {monthLabels.map((label, index) => {
-                    const isSelected =
-                      selectedDate.getFullYear() === displayYear &&
-                      selectedDate.getMonth() === index;
-
-                    return (
-                      <Button
-                        key={label}
-                        variant={isSelected ? "default" : "ghost"}
-                        className="h-10 text-sm"
-                        onClick={() => {
-                          setSelectedDate(new Date(displayYear, index, 1));
-                          setIsPickerOpen(false);
-                        }}
-                      >
-                        {label}
-                      </Button>
-                    );
-                  })}
-                </div>
-              </div>
-            ) : (
-              <div className="bg-background">
-                <div className="flex items-center justify-between border-b border-border px-3 py-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setDisplayYear((prev) => prev - 10)}
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  <div className="text-sm font-semibold">{decadeStart}-{decadeStart + 9}</div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setDisplayYear((prev) => prev + 10)}
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
-                <div className="grid grid-cols-3 gap-2 p-3">
-                  {yearGrid.map((year) => {
-                    const isOutside = year < decadeStart || year > decadeStart + 9;
-                    const isSelected = year === selectedDate.getFullYear();
-
-                    return (
-                      <Button
-                        key={year}
-                        variant={isSelected ? "default" : "ghost"}
-                        className={isOutside ? "h-10 text-sm text-muted-foreground" : "h-10 text-sm"}
-                        disabled={isOutside}
-                        onClick={() => {
-                          setDisplayYear(year);
-                          setPickerView("month");
-                        }}
-                      >
-                        {year}
-                      </Button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </PopoverContent>
-        </Popover>
+          <MonthYearPicker value={selectedDate} onChange={setSelectedDate} />
         }
       />
 
@@ -336,14 +211,6 @@ const CustomerLedgerPage = () => {
                 placeholder="Enter amount"
                 value={paymentAmount}
                 onChange={(e) => setPaymentAmount(e.target.value)}
-              />
-            </div>
-            <div className="space-y-1">
-              <div className="text-xs text-muted-foreground">Payment Date</div>
-              <Input
-                type="date"
-                value={paymentDate}
-                onChange={(e) => setPaymentDate(e.target.value)}
               />
             </div>
             <div className="flex items-end">

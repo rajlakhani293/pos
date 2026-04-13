@@ -4,15 +4,8 @@ import { useEffect, useState } from "react";
 import CustomDrawer from "@/components/CustomDrawer";
 import { Spinner } from "@/components/ui/spinner";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Button } from "@/components/ui/button";
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
-import { format } from "date-fns";
+import { MonthYearPicker } from "@/components/date-picker";
 import dayjs from "dayjs";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { settings } from "@/lib/api/settings";
 
 type DueHistoryDrawerProps = {
@@ -34,14 +27,8 @@ export const DueHistoryDrawer = ({ isOpen, onClose, party }: DueHistoryDrawerPro
   const [creditLoading, setCreditLoading] = useState(false);
   const [getPartyCreditDays] = settings.useGetPartyCreditDaysMutation();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [isPickerOpen, setIsPickerOpen] = useState(false);
-  const [pickerView, setPickerView] = useState<"month" | "year">("month");
-  const [displayYear, setDisplayYear] = useState(selectedDate.getFullYear());
-  const monthValue = selectedDate.getMonth() + 1; 
+  const monthValue = selectedDate.getMonth() + 1;
   const yearValue = selectedDate.getFullYear();
-  const decadeStart = Math.floor(displayYear / 10) * 10;
-  const yearGrid = Array.from({ length: 12 }, (_, index) => decadeStart - 1 + index);
-  const monthLabels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
   const loadPartySummary = async (partyId: number) => {
     setCreditLoading(true);
@@ -75,132 +62,17 @@ export const DueHistoryDrawer = ({ isOpen, onClose, party }: DueHistoryDrawerPro
       onClose={onClose}
       title="Due History"
       subtitle={
-        <>
-          <div className="flex gap-2 items-center">
-            <span className="font-medium">{party?.name || ""}</span>
-            <span className="text-muted-foreground">-</span>
-            <div className="font-medium text-left">{dayjs(selectedDate).format("MMM, YYYY")}</div>
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-semibold">{party?.name}</span>
+          <div className="text-sm font-semibold text-muted-foreground">
+            {dayjs(`${creditSummary?.month}-01`).format("MMM YYYY")}
           </div>
-        </>
+        </div>
       }
+      headerRight={<MonthYearPicker value={selectedDate} onChange={setSelectedDate} />}
       footer={false}
       width={700}
     >
-      <div className="mb-4 flex items-center justify-between">
-        <div className="text-sm font-semibold">Month</div>
-        <Popover
-          open={isPickerOpen}
-          onOpenChange={(open) => {
-            setIsPickerOpen(open);
-            if (open) {
-              setDisplayYear(selectedDate.getFullYear());
-              setPickerView("month");
-            }
-          }}
-        >
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              className="h-9 justify-start gap-2 px-3 text-left font-normal"
-            >
-              <CalendarIcon className="h-4 w-4" />
-              {format(selectedDate, "MMM yyyy")}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-72 p-0" align="end">
-            {pickerView === "month" ? (
-              <div className="bg-background">
-                <div className="flex items-center justify-between border-b border-border px-3 py-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setDisplayYear((prev) => prev - 1)}
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    className="text-sm font-semibold"
-                    onClick={() => setPickerView("year")}
-                  >
-                    {displayYear}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setDisplayYear((prev) => prev + 1)}
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
-                <div className="grid grid-cols-3 gap-2 p-3">
-                  {monthLabels.map((label, index) => {
-                    const isSelected =
-                      selectedDate.getFullYear() === displayYear &&
-                      selectedDate.getMonth() === index;
-
-                    return (
-                      <Button
-                        key={label}
-                        variant={isSelected ? "default" : "ghost"}
-                        className="h-10 text-sm"
-                        onClick={() => {
-                          setSelectedDate(new Date(displayYear, index, 1));
-                          setIsPickerOpen(false);
-                        }}
-                      >
-                        {label}
-                      </Button>
-                    );
-                  })}
-                </div>
-              </div>
-            ) : (
-              <div className="bg-background">
-                <div className="flex items-center justify-between border-b border-border px-3 py-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setDisplayYear((prev) => prev - 10)}
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  <div className="text-sm font-semibold">{decadeStart}-{decadeStart + 9}</div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setDisplayYear((prev) => prev + 10)}
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
-                <div className="grid grid-cols-3 gap-2 p-3">
-                  {yearGrid.map((year) => {
-                    const isOutside = year < decadeStart || year > decadeStart + 9;
-                    const isSelected = year === selectedDate.getFullYear();
-
-                    return (
-                      <Button
-                        key={year}
-                        variant={isSelected ? "default" : "ghost"}
-                        className={isOutside ? "h-10 text-sm text-muted-foreground" : "h-10 text-sm"}
-                        disabled={isOutside}
-                        onClick={() => {
-                          setDisplayYear(year);
-                          setPickerView("month");
-                        }}
-                      >
-                        {year}
-                      </Button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </PopoverContent>
-        </Popover>
-      </div>
-
       {creditLoading ? (
         <div className="flex h-40 items-center justify-center">
           <Spinner />
@@ -208,9 +80,7 @@ export const DueHistoryDrawer = ({ isOpen, onClose, party }: DueHistoryDrawerPro
       ) : creditSummary ? (
         <div className="space-y-5">
           <div className="space-y-4">
-            <div className="text-sm font-semibold text-muted-foreground">
-              {dayjs(`${creditSummary.month}-01`).format("MMM YYYY")}
-            </div>
+           
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <div className="rounded-lg border p-3">
                 <div className="text-xs text-muted-foreground">Opening Balance</div>

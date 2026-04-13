@@ -20,6 +20,7 @@ interface CustomDrawerProps {
   isLoading?: boolean;
   disabled?: boolean;
   width?: string | number;
+  headerRight?: ReactNode;
 }
 
 const CustomDrawer = ({
@@ -36,6 +37,7 @@ const CustomDrawer = ({
   isLoading = false,
   disabled = false,
   width,
+  headerRight,
 }: CustomDrawerProps) => {
   const getWidthClass = (width: string | number | undefined): string => {
     if (!width) return 'w-[700px]'; 
@@ -62,11 +64,14 @@ const CustomDrawer = ({
                 </span>
               )}
             </div>
-              <DrawerClose asChild className="h-full">
+            <div className="flex items-center gap-2 h-full">
+              {headerRight}
+              <DrawerClose asChild className="">
                 <Button variant="ghost" size="sm">
                   <X className="h-4 w-4" />
                 </Button>
               </DrawerClose>
+            </div>
           </div>
         </DrawerHeader>
 
