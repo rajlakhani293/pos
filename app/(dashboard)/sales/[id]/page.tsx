@@ -137,8 +137,7 @@ export default function SalesDetailPage() {
       },
       {
         threshold: 0.01,
-        root: contentRef.current,
-        rootMargin: "0px 0px -100px 0px",
+        root: contentRef.current
       }
     );
 
@@ -468,7 +467,8 @@ export default function SalesDetailPage() {
           <div ref={paginationSentinelRef} className="h-px w-full" />
         </div>
 
-        <footer className={`sticky z-50 transition-all duration-300 ease-in-out ${isFooterStuck ? "mx-6 bottom-5" : "mx-0 bottom-0"}`}>
+      </div>
+              <footer className={`sticky z-50 transition-all duration-300 ease-in-out ${isFooterStuck ? "mx-6 bottom-5" : "mx-0 bottom-0"}`}>
           <div className={`flex items-center justify-between gap-x-2 p-3 bg-white/90 backdrop-blur-md transition-shadow duration-200 ${isFooterStuck ? "rounded-lg shadow-lg border border-gray-200/80" : "rounded-t-none shadow-none border-t-2 border-gray-100"}`}>
             <div className="flex items-center gap-4">
               <div className="text-sm">
@@ -529,7 +529,6 @@ export default function SalesDetailPage() {
             </div>
           </div>
         </footer>
-      </div>
     </div>
   );
 }

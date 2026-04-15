@@ -66,7 +66,8 @@ const Categories = () => {
 
   return (
     <>
-        <DynamicTable
+        <div className="h-full">
+          <DynamicTable
           tableTitle="Item Categories"
           title="Add Item Category"
           showSearch={true}
@@ -96,7 +97,7 @@ const Categories = () => {
         onSuccess={handleSuccess}
         id={selectedId?.id}
         title={selectedId ? `Edit Item Category` : `Add Item Category`}
-      />
+      /></div>
     </>
   );
 };

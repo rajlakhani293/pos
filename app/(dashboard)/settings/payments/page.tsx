@@ -20,6 +20,8 @@ const PaymentPage = () => {
     sortableFields,
     handleFilterChange,
     searchTerm,
+    selectedDateRange,
+    dateFilters,
     itemsPerPage,
   } = useTableData({
     getMaster: settings.useGetPaymentHistoryMutation,
@@ -53,11 +55,14 @@ const PaymentPage = () => {
   );
 
   return (
-    <DynamicTable
+   <div className="h-full">
+     <DynamicTable
       tableTitle="Payments"
       showSearch={true}
       searchTerm={searchTerm}
       showDateRange={true}
+      dateFilters={dateFilters}
+      selectedDateRange={selectedDateRange}
       onFilterChange={handleFilterChange}
       data={orders}
       columns={columns}
@@ -72,6 +77,7 @@ const PaymentPage = () => {
       showEdit={false}
       isLoading={isLoading}
     />
+   </div>
   );
 };
 

@@ -52,6 +52,7 @@ interface DynamicFormProps<T> {
   formWidth?: string | number;
   extra?: (formikProps: any) => React.ReactNode;
   onFieldChange?: (name: string, value: any) => void;
+  isLoading?: boolean;
 }
 
 const DynamicForm = <T extends Record<string, any>>({
@@ -68,6 +69,7 @@ const DynamicForm = <T extends Record<string, any>>({
   validationSchema,
   extra,
   onFieldChange,
+  isLoading = false,
 }: DynamicFormProps<T>) => {
   // Convert formWidth to CSS class
   const getWidthClass = (width: string | number | undefined): string => {
@@ -185,12 +187,9 @@ const DynamicForm = <T extends Record<string, any>>({
 
   const handleClose = () => {
     if (!isSubmitting) {
-      // Add a delay to prevent aria-hidden focus issues during drawer close animation
-      setTimeout(() => {
-        setFormData(initialValues);
-        setErrors({});
-        onClose?.();
-      }, 100); // Increased delay to ensure drawer close animation completes
+      setFormData(initialValues);
+      setErrors({});
+      onClose?.();
     }
   };
 
@@ -226,7 +225,15 @@ const DynamicForm = <T extends Record<string, any>>({
           </div>
         </DrawerHeader>
         
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-6 relative">
+          {isLoading && (
+            <div className="absolute inset-0 bg-background/80 flex items-center justify-center z-10">
+              <div className="flex flex-col items-center gap-2">
+                <Spinner />
+                <span className="text-sm text-muted-foreground">Loading...</span>
+              </div>
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="space-y-4">
             {fields.map((field) => (
               <div key={field.name} className="space-y-2">

@@ -62,7 +62,8 @@ const Brands = () => {
 
   return (
     <>
-        <DynamicTable
+       <div className="h-full">
+         <DynamicTable
           tableTitle="Brands"
           title="Add Brand"
           showSearch={true}
@@ -93,6 +94,7 @@ const Brands = () => {
         id={selectedId?.id}
         title={selectedId ? `Edit Brand` : `Add Brand`}
       />
+       </div>
     </>
   );
 };

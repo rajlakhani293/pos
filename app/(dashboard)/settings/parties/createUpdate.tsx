@@ -34,6 +34,7 @@ export function PartyForm({
   const [countries, setCountries] = useState<any[]>([]);
   const [states, setStates] = useState<any[]>([]);
   const [cities, setCities] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const Schema: FormField[] = [
    { 
@@ -211,6 +212,7 @@ export function PartyForm({
 
   const handleGetMaster = async (id: any) => {
     try {
+      setIsLoading(true);
       const result: any = await getPartyData({ id: parseInt(id) }).unwrap();
       if (result?.data) {
         const data = result.data;
@@ -235,6 +237,8 @@ export function PartyForm({
       }
     } catch (e) {
       console.error("Fetch failed:", e);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -261,16 +265,17 @@ export function PartyForm({
 
   useEffect(() => {
     if (isOpen) {
-      loadCountries();
-      
-      if (id) {
-        handleGetMaster(id);
-      } else {
-        const defaultValues = getInitialFormValues(Schema, null, 'create');
-        defaultValues.country_id = "1"; 
-        setInitialValues(defaultValues);
-        loadStates("1");
-      }
+      setIsLoading(true);
+      loadCountries().finally(() => {
+        if (id) {
+          handleGetMaster(id);
+        } else {
+          const defaultValues = getInitialFormValues(Schema, null, 'create');
+          defaultValues.country_id = "1"; 
+          setInitialValues(defaultValues);
+          loadStates("1").finally(() => setIsLoading(false));
+        }
+      });
     }
   }, [id, isOpen]);
 
@@ -292,6 +297,7 @@ export function PartyForm({
       onFieldChange={handleFieldChange}
       isOpen={isOpen}
       title={title}
+      isLoading={isLoading}
     />
   );
 }

@@ -547,8 +547,8 @@ export default function ItemPage() {
           <div ref={paginationSentinelRef} className="h-px w-full" />
 
           {/* Form Actions */}
-          <footer className={`mt-4 sticky z-50 transition-all duration-300 ease-in-out ${isFooterStuck ? "mx-6 bottom-5" : "mx-0 bottom-0"}`}>
-            <div className={`flex items-center justify-end gap-x-2 rounded-b-xl p-3 bg-white/90 backdrop-blur-md transition-shadow duration-200 ${isFooterStuck ? "rounded-t-xl shadow-lg border border-gray-200/80" : "rounded-t-none shadow-none border-t-2 border-gray-100"}`}>
+          <footer className={`mt-4 sticky z-50 transition-all duration-300 ease-in-out ${isFooterStuck ? "mx-3 bottom-5" : "mx-0 bottom-0"}`}>
+            <div className={`flex items-center justify-end gap-x-2 rounded-b-xl p-3 bg-white/90 backdrop-blur-md transition-shadow duration-200 ${isFooterStuck ? "rounded-t-xl border border-gray-200" : "rounded-t-none border-t-2 border-gray-100"}`}>
               <Button
                 type="button"
                 variant="outline"

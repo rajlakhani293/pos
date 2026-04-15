@@ -24,3 +24,20 @@ export const PAYMENT_MODE_CHOICES = [
     { value: 3, label: 'Partial' },
     { value: 4, label: 'Bank Transfer' },
   ];
+
+export const MOVEMENT_LABELS: Record<string, string> = {
+  OPENING_STOCK: "Opening Stock",
+  PURCHASE: "Purchase",
+  SALES_RETURN: "Sales Return",
+  TRANSFER_IN: "Transfer In",
+  ADJUSTMENT_IN: "Adjustment In",
+  SALE: "Sale",
+  PURCHASE_RETURN: "Purchase Return",
+  TRANSFER_OUT: "Transfer Out",
+  DAMAGE: "Damage",
+  ADJUSTMENT_OUT: "Adjustment Out",
+  SAMPLE_GIVEN: "Sample Given",
+  INTERNAL_USE: "Internal Use",
+  THEFT_LOSS: "Theft / Loss",
+  DAMAGE_EXPIRED: "Damage / Expired",
+};

@@ -66,7 +66,8 @@ const Items = () => {
   );
 
   return (
-      <DynamicTable
+     <div className="h-full">
+       <DynamicTable
         tableTitle="Items"
         title="Add Item"
         showSearch={true}
@@ -89,6 +90,7 @@ const Items = () => {
         isLoading={isLoading}
         onEdit={handleEditItem}
       />
+     </div>
   );
 };
 

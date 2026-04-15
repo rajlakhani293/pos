@@ -3,14 +3,6 @@
 import { useState, useEffect, useRef } from "react";
 import dayjs from "dayjs";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -32,6 +24,9 @@ import {
   UniFieldSelect,
 } from "@/components/ui/unifield-select";
 import {
+  DateRangePicker,
+} from "@/components/date-picker";
+import {
   SelectItem,
 } from "@/components/ui/select";
 import {
@@ -41,7 +36,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { ArrowUpDownIcon, CalendarIcon, ChevronLeftIcon, ChevronRightIcon, CloseIcon, DeleteIcon, DownIcon, EditIcon, InfoIcon, MoreIcon, PlusIcon, RoundCloseIcon, SearchIcon, UpIcon } from "./AppIcon";
+import { ArrowUpDownIcon, CalendarIcon, ChevronLeftIcon, ChevronRightIcon, DeleteIcon, DownIcon, EditIcon, InfoIcon, MoreIcon, PlusIcon, RoundCloseIcon, SearchIcon, UpIcon } from "./AppIcon";
 import { showToast } from "@/lib/toast";
 
 const MAX_ICONS_TO_SHOW = 3;
@@ -464,9 +459,9 @@ const DynamicTable = ({
                 {searchTerm && (
                   <button
                     onClick={() => onChange("search", "")}
-                    className="absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground hover:text-destructive"
+                    className="absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground hover:text-destructive cursor-pointer"
                   >
-                    <RoundCloseIcon className="size-4" />
+                    <RoundCloseIcon className="size-4 cursor-pointer" />
                   </button>
                 )}
               </div>
@@ -493,10 +488,10 @@ const DynamicTable = ({
                           onChange("dateRange", translateSelectedDateRange(null));
                         }}
                       >
-                        <RoundCloseIcon className="size-5 hover:text-red-500" />
+                        <RoundCloseIcon className="size-5 hover:text-red-500 cursor-pointer" />
                       </div>
                     ) : (
-                      <DownIcon className="size-5" />
+                      <DownIcon className="size-5 cursor-pointer" />
                     )}
                   </Button>
 
@@ -588,31 +583,20 @@ const DynamicTable = ({
                           </Button>
 
                           {selectedDateRange === "Custom" && (
-                            <div className="flex items-center gap-2 p-4 bg-muted/50 rounded-lg">
-                              <div className="grid gap-1.5 w-full">
-                                <label className="text-xs font-medium text-muted-foreground">Start Date</label>
-                                <UniFieldInput
-                                  type="date"
-                                  value={dateFilters?.startDate ? dayjs(dateFilters.startDate).format('YYYY-MM-DD') : ''}
-                                  onChange={(e) => {
-                                    const start = e.target.value ? dayjs(e.target.value).startOf('day').toDate() : null;
-                                    const end = dateFilters?.endDate;
-                                    onChange("customDate", [start, end]);
-                                  }}
-                                />
-                              </div>
-                              <div className="grid gap-1.5 w-full">
-                                <label className="text-xs font-medium text-muted-foreground">End Date</label>
-                                <UniFieldInput
-                                  type="date"
-                                  value={dateFilters?.endDate ? dayjs(dateFilters.endDate).format('YYYY-MM-DD') : ''}
-                                  onChange={(e) => {
-                                    const end = e.target.value ? dayjs(e.target.value).endOf('day').toDate() : null;
-                                    const start = dateFilters?.startDate;
-                                    onChange("customDate", [start, end]);
-                                  }}
-                                />
-                              </div>
+                            <div className="p-4 bg-muted/50 rounded-lg">
+                              <DateRangePicker
+                                value={{
+                                  from: dateFilters?.startDate ? new Date(dateFilters.startDate) : undefined,
+                                  to: dateFilters?.endDate ? new Date(dateFilters.endDate) : undefined
+                                }}
+                                onChange={(range) => {
+                                  const start = range?.from ? dayjs(range.from).startOf('day').toDate() : null;
+                                  const end = range?.to ? dayjs(range.to).endOf('day').toDate() : null;
+                                  onChange("customDate", [start, end]);
+                                }}
+                                placeholder="Select date range"
+                                className="w-full"
+                              />
                             </div>
                           )}
                         </div>
@@ -643,16 +627,16 @@ const DynamicTable = ({
       {/* Table Container */}
       <div className="w-full overflow-hidden border rounded-lg">
         <div className={`relative ${data?.length > 0 ? "max-h-[calc(100vh-300px)] overflow-y-auto" : "h-[calc(100vh-300px)]"}`}>
-          <Table className={cn(data?.length === 0 && "h-full")}>
-            <TableHeader className="sticky top-0 bg-muted/90 backdrop-blur-sm rounded-t-3xl">
-              <TableRow className="hover:bg-muted/90 border-b">
-                <TableHead className="w-16 text-center">
+          <table className={cn("w-full caption-bottom text-sm", data?.length === 0 && "h-full")}>
+            <thead className="sticky top-0 z-10 bg-muted/90 backdrop-blur-sm rounded-t-3xl">
+              <tr className="hover:bg-muted/90 border-b">
+                <th className="w-16 text-center px-2 h-10 align-middle font-medium whitespace-nowrap">
                   <div className="flex flex-col py-2">
                     <span className="font-medium">Sr No</span>
                   </div>
-                </TableHead>
+                </th>
                 {columns.map((col) => (
-                  <TableHead
+                  <th
                     key={col.key}
                     onClick={
                       sortableFields.includes(col.key)
@@ -660,7 +644,7 @@ const DynamicTable = ({
                         : undefined
                     }
                     className={cn(
-                      "transition-colors",
+                      "px-2 h-10 text-left align-middle font-medium whitespace-nowrap transition-colors",
                       sortableFields.includes(col.key)
                         ? "cursor-pointer hover:bg-muted/50 text-foreground"
                         : "cursor-default"
@@ -692,26 +676,26 @@ const DynamicTable = ({
                         )
                       )}
                     </div>
-                  </TableHead>
+                  </th>
                 ))}
                 {!hideActions && (
-                  <TableHead className="text-right px-4">Actions</TableHead>
+                  <th className="text-right px-4 h-10 align-middle font-medium whitespace-nowrap">Actions</th>
                 )}
-              </TableRow>
-            </TableHeader>
-            <TableBody className={cn(data?.length === 0 && "h-full")}>
+              </tr>
+            </thead>
+            <tbody className={cn("bg-white [&_tr:last-child]:border-0", data?.length === 0 && "h-full")}>
               {isLoading ? (
-                <TableRow key="loading">
-                  <TableCell
+                <tr key="loading">
+                  <td
                     colSpan={columns.length + (hideActions ? 0 : 1) + 1}
-                    className="h-24 text-center"
+                    className="p-2 h-24 text-center align-middle"
                   >
                     <div className="flex items-center justify-center space-x-2">
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
                       <span className="text-muted-foreground">Loading...</span>
                     </div>
-                  </TableCell>
-                </TableRow>
+                  </td>
+                </tr>
               ) : data?.length > 0 ? (
                 data.map((row, index) => {
                   const isDisabledRow = isRowDisabled ? isRowDisabled(row) : false;
@@ -720,19 +704,19 @@ const DynamicTable = ({
                   const dropdownActions = allActions.slice(MAX_ICONS_TO_SHOW);
 
                   return (
-                    <TableRow
+                    <tr
                       key={row.id || `row-${index}`}
                       onClick={() => onRowClick?.(row)}
                       data-state={selectedRows.includes(String(row.id)) ? "selected" : undefined}
                       className={cn(
-                        "group transition-all duration-200",
+                        "group hover:bg-muted/50 data-[state=selected]:bg-muted border-b transition-colors",
                         isDisabledRow && "opacity-60 cursor-not-allowed",
                         onRowClick && "cursor-pointer"
                       )}
                     >
-                      <TableCell key={`row-number-${row.id || index}`} className="py-3 text-center">
+                      <td className={`p-2 align-middle whitespace-nowrap text-center py-3`}>
                         <TableCellContent value={(currentPage - 1) * itemsPerPage + index + 1} />
-                      </TableCell>
+                      </td>
                       {columns.map((col) => {
                         const rawValue = col.render
                           ? col.render(
@@ -747,16 +731,16 @@ const DynamicTable = ({
                           : row[col.key] ?? <span className="text-muted-foreground">-</span>;
 
                         return (
-                          <TableCell
+                          <td
                             key={`${col.key}-${row.id || index}`}
-                            className={cn("py-3", isDisabledRow && "text-muted-foreground")}
+                            className={cn("p-2 align-middle whitespace-nowrap py-3", isDisabledRow && "text-muted-foreground")}
                           >
                             <TableCellContent value={rawValue} />
-                          </TableCell>
+                          </td>
                         );
                       })}
                       {!hideActions && (
-                        <TableCell key={`actions-${row.id || index}`} className="px-4 py-3">
+                        <td className="px-4 py-3 p-2 align-middle whitespace-nowrap">
                           <div className="flex items-center justify-end gap-2 relative">
                             {visibleActions.map(({ key, icon, labelText, onClick, render }) => (
                               render ? (
@@ -810,23 +794,23 @@ const DynamicTable = ({
                               </DropdownMenu>
                             )}
                           </div>
-                        </TableCell>
+                        </td>
                       )}
-                    </TableRow>
+                    </tr>
                   );
                 })
               ) : (
-                <TableRow key="no-data" className="h-full">
-                  <TableCell
+                <tr key="no-data" className="h-full">
+                  <td
                     colSpan={columns.length + (hideActions ? 0 : 1) + 1}
-                    className="h-full text-center align-middle"
+                    className="p-2 h-full text-center align-middle"
                   >
                     No Data available
-                  </TableCell>
-                </TableRow>
+                  </td>
+                </tr>
               )}
-            </TableBody>
-          </Table>
+            </tbody>
+          </table>
         </div>
       </div>
 
@@ -836,13 +820,13 @@ const DynamicTable = ({
       {totalItems > 10 && (
       <div
         className={cn(
-          "sticky bottom-4 transition-all duration-300",
-          isFooterStuck && "px-6"
+          "sticky bottom-2 transition-all duration-300",
+          isFooterStuck && "px-3"
         )}
       >
         <div className={cn(
-          "flex flex-col sm:flex-row items-center justify-between gap-4 p-3 rounded-lg bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 border shadow-sm",
-          isFooterStuck && "shadow-lg border-primary/20"
+          "flex flex-col sm:flex-row items-center justify-between gap-4 p-3 rounded-lg bg-white border",
+          isFooterStuck && "border-primary/20"
         )}>
 
           {/* Summary Items */}
@@ -874,7 +858,8 @@ const DynamicTable = ({
                 value={String(itemsPerPage)}
                 onValueChange={(val) => onChange("itemsPerPage", Number(val))}
                 placeholder="Rows per page"
-                containerClassName="w-[130px] h-9"
+                containerClassName="w-[130px]"
+                size="sm"
               >
                 <SelectItem value="20">20 / page</SelectItem>
                 <SelectItem value="50">50 / page</SelectItem>
@@ -900,7 +885,7 @@ const DynamicTable = ({
                     key={i}
                     variant={currentPage === page ? "default" : "ghost"}
                     size="sm"
-                    className="h-9 w-9 bg-blue-600"
+                    className="h-9 w-9"
                     onClick={() => onPageChange(Number(page))}
                   >
                     {page}

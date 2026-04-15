@@ -284,7 +284,7 @@ export default function CreateSalePage() {
       if (!formData.party_id || (typeof formData.party_id === 'string' && formData.party_id.trim() === '')) {
         newErrors.party_id = "Party is required for partial payment";
       }
-      
+
       const paidValue = parseFloat(formData.paid_amount || "0");
       if (isNaN(paidValue) || paidValue < 0) {
         newErrors.paid_amount = "Paid amount must be 0 or greater for partial payment";
@@ -525,17 +525,17 @@ export default function CreateSalePage() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <Spinner />
-          <p className="mt-2 text-gray-600">Loading sales data...</p>
+        <div className="flex items-center gap-3">
+          <Spinner className="h-6 w-6" />
+          <p className="text-gray-600">Loading sales data...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-white flex flex-col h-full relative">
-      <div ref={contentRef} className="flex-1 overflow-y-auto custom-scrollbar">
+    <div className="bg-white flex flex-col h-full w-full relative">
+      <div ref={contentRef} className="flex-1 overflow-y-auto">
         <form onSubmit={handleSubmit} noValidate className="space-y-6" id="sales-form">
           <div className="flex">
             <div className="space-y-4 flex-3 min-w-0 p-4 border-r border-gray-200">
@@ -656,14 +656,14 @@ export default function CreateSalePage() {
                   <p className="text-sm text-gray-500">{formData.transactions.length} items</p>
                 </div>
 
-                <div className="overflow-x-auto border rounded-lg border-gray-200">
+                <div className="border rounded-lg border-gray-200">
                   {errors.transactions && (
                     <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 text-sm rounded-t-lg">
                       {errors.transactions}
                     </div>
                   )}
-                  <table className="w-full text-sm text-left">
-                    <thead className="bg-gray-50 text-gray-700 uppercase text-[10px] font-bold">
+                  <table className="w-full text-sm text-left overflow-hidden rounded-lg">
+                    <thead className="bg-gray-50 text-gray-700 uppercase text-[10px] font-bold rounded-t-lg overflow-hidden">
                       <tr>
                         <th className="px-3 py-2">Item</th>
                         <th className="px-3 py-2 w-24">Qty</th>
@@ -673,8 +673,8 @@ export default function CreateSalePage() {
                     </thead>
                     <tbody className="divide-y divide-gray-200">
                       {formData.transactions.length === 0 ? (
-                        <tr>
-                          <td colSpan={4} className="px-3 py-4 text-center text-gray-500 italic">
+                        <tr className="">
+                          <td colSpan={4} className="px-3 h-20 text-center text-gray-500 italic">
                             Add items from catalog.
                           </td>
                         </tr>
@@ -862,18 +862,19 @@ export default function CreateSalePage() {
               </div>
             </div>
           </div>
-        <div ref={paginationSentinelRef} className="h-px w-full" />
+          <div ref={paginationSentinelRef} className="h-px w-full" />
         </form>
-
-        <footer className={`sticky z-50 transition-all duration-300 ease-in-out ${isFooterStuck ? "mx-6 bottom-5" : "mx-0 bottom-0"}`}>
-            <div className={`flex items-center justify-between gap-x-2 p-3 bg-white/90 backdrop-blur-md transition-shadow duration-200 ${isFooterStuck ? "rounded-lg shadow-lg border border-gray-200/80" : "rounded-t-none shadow-none border-t-2 border-gray-100"}`}>
-              <div className="flex items-center gap-4">
-                <div className="text-sm">
-                  <span className="text-gray-600">Grand Total: </span>
-                  <span className="font-bold text-lg text-gray-900">₹{formData.total_amount || "0.00"}</span>
-                </div>
+      </div>
+      
+       <footer className={`sticky z-50 transition-all duration-300 ease-in-out ${isFooterStuck ? "mx-6 bottom-5" : "mx-0 bottom-0"}`}>
+          <div className={`flex items-center justify-between gap-x-2 p-3 bg-white/90 backdrop-blur-md transition-shadow duration-200 ${isFooterStuck ? "rounded-lg shadow-lg border border-gray-200/80" : "rounded-t-none shadow-none border-t-2 border-gray-100"}`}>
+            <div className="flex items-center gap-4">
+              <div className="text-sm">
+                <span className="text-gray-600">Grand Total: </span>
+                <span className="font-bold text-lg text-gray-900">₹{formData.total_amount || "0.00"}</span>
               </div>
-              <div className="flex items-center gap-x-2">
+            </div>
+            <div className="flex items-center gap-x-2">
               <Button
                 type="button"
                 variant="outline"
@@ -898,11 +899,9 @@ export default function CreateSalePage() {
                   <span className="flex items-center gap-2">Create Sale</span>
                 )}
               </Button>
-              </div>
             </div>
+          </div>
         </footer>
-
-      </div>
 
       {/* Add Forms */}
       <PartyForm

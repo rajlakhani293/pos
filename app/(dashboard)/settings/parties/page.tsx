@@ -37,7 +37,7 @@ const Parties = () => {
     getMaster: settings.useGetPartiesDataMutation,
     itemsPerPage: 20,
     extraOptions: { refreshTrigger },
-    disableDateFilter: true,
+    // disableDateFilter: true,
   });
 
   const handleCreateItem = () => {
@@ -181,13 +181,14 @@ const Parties = () => {
 
   return (
     <>
+      <div className="h-full">
         <DynamicTable
           tableTitle="Parties"
           title="Add Party"
           showSearch={true}
           searchTerm={searchTerm}
-          showDateRange={false}
-          // selectedDateRange={selectedDateRange}
+          showDateRange={true}
+          selectedDateRange={selectedDateRange}
           dateFilters={dateFilters}
           setAddEntityOpen={handleCreateItem}
           onFilterChange={handleFilterChange}
@@ -206,31 +207,32 @@ const Parties = () => {
           rowActions={rowActions}
         />
 
-      <PartyForm
-        isOpen={isAddEntityOpen}
-        onClose={handleClose}
-        onSuccess={handleSuccess}
-        id={selectedId?.id}
-        title={selectedId ? `Edit Party` : `Add Party`}
-      />
+        <PartyForm
+          isOpen={isAddEntityOpen}
+          onClose={handleClose}
+          onSuccess={handleSuccess}
+          id={selectedId?.id}
+          title={selectedId ? `Edit Party` : `Add Party`}
+        />
 
-      <DueHistoryDrawer
-        isOpen={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-        party={selectedParty}
-      />
+        <DueHistoryDrawer
+          isOpen={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+          party={selectedParty}
+        />
 
-      <PaymentDrawer
-        isOpen={paymentDrawerOpen}
-        onClose={() => setPaymentDrawerOpen(false)}
-        partyName={selectedParty?.name || ""}
-        paymentAmount={paymentAmount}
-        paymentNote={paymentNote}
-        onPaymentAmountChange={setPaymentAmount}
-        onPaymentNoteChange={setPaymentNote}
-        onAddPayment={handleAddPayment}
-        paymentSaving={paymentSaving}
-      />
+        <PaymentDrawer
+          isOpen={paymentDrawerOpen}
+          onClose={() => setPaymentDrawerOpen(false)}
+          partyName={selectedParty?.name || ""}
+          paymentAmount={paymentAmount}
+          paymentNote={paymentNote}
+          onPaymentAmountChange={setPaymentAmount}
+          onPaymentNoteChange={setPaymentNote}
+          onAddPayment={handleAddPayment}
+          paymentSaving={paymentSaving}
+        />
+      </div>
     </>
   );
 };

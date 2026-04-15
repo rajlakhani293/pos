@@ -136,6 +136,7 @@ const Sales = () => {
 
   return (
     <>
+    <div className="h-full">
       <DynamicTable
         tableTitle="Sales"
         title="Add Sale"
@@ -281,6 +282,7 @@ const Sales = () => {
             </div>
           </div></>
       </CustomDrawer>
+    </div>
     </>
   );
 };

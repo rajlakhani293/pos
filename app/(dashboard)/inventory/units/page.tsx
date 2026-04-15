@@ -66,7 +66,8 @@ const Units = () => {
 
   return (
     <>
-        <DynamicTable
+       <div className="h-full">
+         <DynamicTable
           tableTitle="Item Units"
           title="Add Item Unit"
           showSearch={true}
@@ -97,6 +98,7 @@ const Units = () => {
         id={selectedId?.id}
         title={selectedId ? `Edit Item Unit` : `Add Item Unit`}
       />
+       </div>
     </>
   );
 };
