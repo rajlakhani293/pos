@@ -2,9 +2,7 @@
 
 import { useEffect, useState } from "react";
 import CustomDrawer from "@/components/CustomDrawer";
-import { Spinner } from "@/components/ui/spinner";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { MonthYearPicker } from "@/components/date-picker";
+import { Spinner, MonthYearPicker, Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/index";
 import dayjs from "dayjs";
 import { settings } from "@/lib/api/settings";
 

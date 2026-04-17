@@ -3,18 +3,16 @@
 import React, { useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import toast from "react-hot-toast"
-import { Button } from "@/components/ui/button"
 import {
+  Button,
   Field,
   FieldDescription,
   FieldGroup,
-} from "@/components/ui/field"
-import { OTPVerification } from "@/components/otp-verification"
-import {
   Card,
   CardContent,
-} from "@/components/ui/card"
-import { UniFieldInput } from "@/components/ui/unifield-input"
+  UniFieldInput,
+} from "./index"
+import { OTPVerification } from "@/components/otp-verification"
 import { auth } from "@/lib/api/auth"
 
 const SignupForm = ({ className, ...props }: React.ComponentProps<"div">) => {
@@ -87,6 +85,7 @@ const SignupForm = ({ className, ...props }: React.ComponentProps<"div">) => {
         const token = result.data.registration_token
         return token
       }
+      return null
     } catch (error: any) {
       return null
     }

@@ -9,7 +9,7 @@ import dayjs from "dayjs";
 import { showToast } from "@/lib/toast";
 import CustomDrawer from "@/components/CustomDrawer";
 import { Edit } from "lucide-react";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/index";
 import { PAYMENT_MODE_CHOICES } from "@/lib/utils/constants";
 
 const toNumber = (value: number | string | undefined | null) => Number(value || 0);
@@ -162,7 +162,6 @@ const Sales = () => {
         rowActions={rowActions}
         onRowClick={handleRowClick}
       />
-
 
       <CustomDrawer
         isOpen={invoiceOpen}

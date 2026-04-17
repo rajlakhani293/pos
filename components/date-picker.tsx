@@ -5,14 +5,14 @@ import { format } from "date-fns"
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react"
 import { type DateRange } from "react-day-picker"
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { Calendar } from "@/components/ui/calendar"
 import {
+  Button,
+  Calendar,
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover"
-import { FieldLabel } from "@/components/ui/field"
+  FieldLabel,
+} from "./index"
 
 interface DatePickerProps {
   value?: Date

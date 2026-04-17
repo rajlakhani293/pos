@@ -9,7 +9,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from "../index"
 import { Field, FieldError, FieldLabel } from "./field"
 import { ArrowRightIcon, CirclePlusIcon } from "@/components/AppIcon"
 

@@ -7,37 +7,24 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import {
+  Button,
   UniFieldInput,
-} from "@/components/ui/unifield-input";
-import {
-  UniFieldSelect,
-} from "@/components/ui/unifield-select";
-import {
   DateRangePicker,
-} from "@/components/date-picker";
-import {
-  SelectItem,
-} from "@/components/ui/select";
-import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from "./index";
 import { cn } from "@/lib/utils";
-import { ArrowUpDownIcon, CalendarIcon, ChevronLeftIcon, ChevronRightIcon, DeleteIcon, DownIcon, EditIcon, InfoIcon, MoreIcon, PlusIcon, RoundCloseIcon, SearchIcon, UpIcon } from "./AppIcon";
+import { ArrowUpDownIcon, CalendarIcon, DeleteIcon, DownIcon, EditIcon, MoreIcon, PlusIcon, RoundCloseIcon, SearchIcon, UpIcon } from "./AppIcon";
 import { showToast } from "@/lib/toast";
+import TableFooter from "./TableFooter";
 
 const MAX_ICONS_TO_SHOW = 3;
 const MAX_CHARS_PER_LINE = 35;
@@ -47,13 +34,13 @@ const generateFinancialYears = (count = 5) => {
   const currentYear = new Date().getFullYear();
   const currentFY = currentYear % 100; // Get last 2 digits
   const years = [];
-  
+
   for (let i = 0; i < count; i++) {
     const fyStart = (currentFY - i) % 100;
     const fyEnd = (fyStart + 1) % 100;
     years.push(`FY ${fyStart}-${fyEnd.toString().padStart(2, '0')}`);
   }
-  
+
   return years;
 };
 
@@ -260,18 +247,13 @@ const DynamicTable = ({
   useEffect(() => {
     const sentinel = paginationSentinelRef.current;
     if (!sentinel) return;
-
     const observer = new IntersectionObserver(
-      (entries) => {
-        const entry = entries[0];
-        setIsFooterStuck(!entry.isIntersecting);
-      },
-      {
+      ([entry]) => setIsFooterStuck(!entry.isIntersecting),
+     {
         threshold: 0.01,
-        rootMargin: "0px 0px -85px 0px"
+        // rootMargin: "0px 0px -85 0px"
       },
     );
-
     observer.observe(sentinel);
     return () => observer.disconnect();
   }, []);
@@ -425,490 +407,408 @@ const DynamicTable = ({
   };
 
   return (
-    <div className="w-full space-y-4">
-      {/* Integrated Header/Filter Section */}
-      <div className="w-full space-y-4 mb-4">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-2">
-            {tableTitle && (
-              <h2 className="text-2xl font-bold tracking-tight text-foreground">
-                {tableTitle}
-              </h2>
-            )}
-
-            {totalItems > 0 && (
-              <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
-                {totalItems}
-              </span>
-            )}
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-end">
-          <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            {showSearch && (
-              <div className="relative w-full sm:max-w-xs">
-                <UniFieldInput
-                  type="text"
-                  placeholder="Search..."
-                  value={searchTerm}
-                  onChange={(e) => onChange("search", e.target.value)}
-                  className="w-full pl-9 pr-9 h-9"
-                  prefix={<SearchIcon className="h-4 w-4" />}
-                />
-                {searchTerm && (
-                  <button
-                    onClick={() => onChange("search", "")}
-                    className="absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground hover:text-destructive cursor-pointer"
-                  >
-                    <RoundCloseIcon className="size-4 cursor-pointer" />
-                  </button>
-                )}
-              </div>
-            )}
-
-            <div className="flex gap-2">
-              {showDateRange && (
-                <>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setIsDateRangeModalOpen(true)}
-                    className="h-9 w-full sm:w-auto justify-between gap-2"
-                  >
-                    <div className="flex items-center gap-2">
-                      <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                      <span>{translateSelectedDateRange(selectedDateRange)}</span>
-                    </div>
-                    {selectedDateRange !== translateSelectedDateRange(null) ? (
-                      <div
-                        className="h-4 w-4 bg-white text-muted-foreground hover:text-destructive cursor-pointer flex items-center justify-center"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onChange("dateRange", translateSelectedDateRange(null));
-                        }}
-                      >
-                        <RoundCloseIcon className="size-5 hover:text-red-500 cursor-pointer" />
-                      </div>
-                    ) : (
-                      <DownIcon className="size-5 cursor-pointer" />
-                    )}
-                  </Button>
-
-                  <Dialog
-                    open={isDateRangeModalOpen}
-                    onOpenChange={setIsDateRangeModalOpen}
-                  >
-                    <DialogContent className="sm:max-w-[600px]">
-                      <DialogHeader>
-                        <DialogTitle>Select Date Range</DialogTitle>
-                      </DialogHeader>
-                      <div className="grid gap-6 py-4">
-                        <div className="space-y-2">
-                          <h4 className="text-sm font-medium leading-none">
-                            Quick Select
-                          </h4>
-                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                            {dateRanges.slice(0, 8).map((range) => (
-                              <Button
-                                key={range}
-                                variant={
-                                  selectedDateRange === range ? "default" : "outline"
-                                }
-                                size="sm"
-                                onClick={() => {
-                                  onChange("dateRange", range);
-                                  setIsDateRangeModalOpen(false);
-                                }}
-                                className="w-full text-xs"
-                              >
-                                {range}
-                              </Button>
-                            ))}
-                          </div>
-                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                            {dateRanges.slice(8, 10).map((range) => (
-                              <Button
-                                key={range}
-                                variant={
-                                  selectedDateRange === range ? "default" : "outline"
-                                }
-                                size="sm"
-                                onClick={() => {
-                                  onChange("dateRange", range);
-                                  setIsDateRangeModalOpen(false);
-                                }}
-                                className="w-full text-xs"
-                              >
-                                {range}
-                              </Button>
-                            ))}
-                          </div>
-                        </div>
-
-                        <div className="space-y-2">
-                          <h4 className="text-sm font-medium leading-none">
-                            Financial Year
-                          </h4>
-                          <div className="flex flex-wrap gap-2">
-                            {dateRanges.slice(10).map((range) => (
-                              <Button
-                                key={range}
-                                variant={
-                                  selectedDateRange === range ? "secondary" : "outline"
-                                }
-                                size="sm"
-                                onClick={() => {
-                                  onChange("dateRange", range);
-                                  setIsDateRangeModalOpen(false);
-                                }}
-                                className={cn(
-                                  "text-xs",
-                                  selectedDateRange === range && "bg-green-100 text-green-900 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-300"
-                                )}
-                              >
-                                {range}
-                              </Button>
-                            ))}
-                          </div>
-                        </div>
-
-                        <div className="space-y-4 pt-4 border-t">
-                          <Button
-                            variant={selectedDateRange === "Custom" ? "default" : "ghost"}
-                            className="w-full justify-start dashed border-dashed border"
-                            onClick={() => onChange("dateRange", "Custom")}
-                          >
-                            {selectedDateRange === "Custom" ? "✓ " : "+ "} Custom Range
-                          </Button>
-
-                          {selectedDateRange === "Custom" && (
-                            <div className="p-4 bg-muted/50 rounded-lg">
-                              <DateRangePicker
-                                value={{
-                                  from: dateFilters?.startDate ? new Date(dateFilters.startDate) : undefined,
-                                  to: dateFilters?.endDate ? new Date(dateFilters.endDate) : undefined
-                                }}
-                                onChange={(range) => {
-                                  const start = range?.from ? dayjs(range.from).startOf('day').toDate() : null;
-                                  const end = range?.to ? dayjs(range.to).endOf('day').toDate() : null;
-                                  onChange("customDate", [start, end]);
-                                }}
-                                placeholder="Select date range"
-                                className="w-full"
-                              />
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                </>
+    <>
+      <div className="w-full space-y-4">
+        <div className="w-full space-y-4 mb-4">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-center gap-2">
+              {tableTitle && (
+                <h2 className="text-2xl font-bold tracking-tight text-foreground">
+                  {tableTitle}
+                </h2>
               )}
 
-              <div className="flex items-center gap-2">
-                {title && setAddEntityOpen && (
-                  <Button
-                    size="sm"
-                    onClick={() => setAddEntityOpen?.(true)}
-                    className="gap-2"
-                  >
-                    <PlusIcon className="h-4 w-4" />
-                    {title}
-                  </Button>
+              {totalItems > 0 && (
+                <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                  {totalItems}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-end">
+            <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              {showSearch && (
+                <div className="relative w-full sm:max-w-xs">
+                  <UniFieldInput
+                    type="text"
+                    placeholder="Search..."
+                    value={searchTerm}
+                    onChange={(e) => onChange("search", e.target.value)}
+                    className="w-full pl-9 pr-9 h-9"
+                    prefix={<SearchIcon className="h-4 w-4" />}
+                  />
+                  {searchTerm && (
+                    <button
+                      onClick={() => onChange("search", "")}
+                      className="absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground hover:text-destructive cursor-pointer"
+                    >
+                      <RoundCloseIcon className="size-4 cursor-pointer" />
+                    </button>
+                  )}
+                </div>
+              )}
+
+              <div className="flex gap-2">
+                {showDateRange && (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsDateRangeModalOpen(true)}
+                      className="h-9 w-full sm:w-auto justify-between gap-2"
+                    >
+                      <div className="flex items-center gap-2">
+                        <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                        <span>{translateSelectedDateRange(selectedDateRange)}</span>
+                      </div>
+                      {selectedDateRange !== translateSelectedDateRange(null) ? (
+                        <div
+                          className="h-4 w-4 bg-white text-muted-foreground hover:text-destructive cursor-pointer flex items-center justify-center"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onChange("dateRange", translateSelectedDateRange(null));
+                          }}
+                        >
+                          <RoundCloseIcon className="size-5 hover:text-red-500 cursor-pointer" />
+                        </div>
+                      ) : (
+                        <DownIcon className="size-5 cursor-pointer" />
+                      )}
+                    </Button>
+
+                    <Dialog
+                      open={isDateRangeModalOpen}
+                      onOpenChange={setIsDateRangeModalOpen}
+                    >
+                      <DialogContent className="sm:max-w-[600px]">
+                        <DialogHeader>
+                          <DialogTitle>Select Date Range</DialogTitle>
+                        </DialogHeader>
+                        <div className="grid gap-6 py-4">
+                          <div className="space-y-2">
+                            <h4 className="text-sm font-medium leading-none">
+                              Quick Select
+                            </h4>
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                              {dateRanges.slice(0, 8).map((range) => (
+                                <Button
+                                  key={range}
+                                  variant={
+                                    selectedDateRange === range ? "default" : "outline"
+                                  }
+                                  size="sm"
+                                  onClick={() => {
+                                    onChange("dateRange", range);
+                                    setIsDateRangeModalOpen(false);
+                                  }}
+                                  className="w-full text-xs"
+                                >
+                                  {range}
+                                </Button>
+                              ))}
+                            </div>
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                              {dateRanges.slice(8, 10).map((range) => (
+                                <Button
+                                  key={range}
+                                  variant={
+                                    selectedDateRange === range ? "default" : "outline"
+                                  }
+                                  size="sm"
+                                  onClick={() => {
+                                    onChange("dateRange", range);
+                                    setIsDateRangeModalOpen(false);
+                                  }}
+                                  className="w-full text-xs"
+                                >
+                                  {range}
+                                </Button>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="space-y-2">
+                            <h4 className="text-sm font-medium leading-none">
+                              Financial Year
+                            </h4>
+                            <div className="flex flex-wrap gap-2">
+                              {dateRanges.slice(10).map((range) => (
+                                <Button
+                                  key={range}
+                                  variant={
+                                    selectedDateRange === range ? "secondary" : "outline"
+                                  }
+                                  size="sm"
+                                  onClick={() => {
+                                    onChange("dateRange", range);
+                                    setIsDateRangeModalOpen(false);
+                                  }}
+                                  className={cn(
+                                    "text-xs",
+                                    selectedDateRange === range && "bg-green-100 text-green-900 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-300"
+                                  )}
+                                >
+                                  {range}
+                                </Button>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="space-y-4 pt-4 border-t">
+                            <Button
+                              variant={selectedDateRange === "Custom" ? "default" : "ghost"}
+                              className="w-full justify-start dashed border-dashed border"
+                              onClick={() => onChange("dateRange", "Custom")}
+                            >
+                              {selectedDateRange === "Custom" ? "✓ " : "+ "} Custom Range
+                            </Button>
+
+                            {selectedDateRange === "Custom" && (
+                              <div className="p-4 bg-muted/50 rounded-lg">
+                                <DateRangePicker
+                                  value={{
+                                    from: dateFilters?.startDate ? new Date(dateFilters.startDate) : undefined,
+                                    to: dateFilters?.endDate ? new Date(dateFilters.endDate) : undefined
+                                  }}
+                                  onChange={(range) => {
+                                    const start = range?.from ? dayjs(range.from).startOf('day').toDate() : null;
+                                    const end = range?.to ? dayjs(range.to).endOf('day').toDate() : null;
+                                    onChange("customDate", [start, end]);
+                                  }}
+                                  placeholder="Select date range"
+                                  className="w-full"
+                                />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </>
                 )}
-                {secondaryActionButton}
+
+                <div className="flex items-center gap-2">
+                  {title && setAddEntityOpen && (
+                    <Button
+                      size="sm"
+                      onClick={() => setAddEntityOpen?.(true)}
+                      className="gap-2"
+                    >
+                      <PlusIcon className="h-4 w-4" />
+                      {title}
+                    </Button>
+                  )}
+                  {secondaryActionButton}
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Table Container */}
-      <div className="w-full overflow-hidden border rounded-lg">
-        <div className={`relative ${data?.length > 0 ? "max-h-[calc(100vh-300px)] overflow-y-auto" : "h-[calc(100vh-300px)]"}`}>
-          <table className={cn("w-full caption-bottom text-sm", data?.length === 0 && "h-full")}>
-            <thead className="sticky top-0 z-10 bg-muted/90 backdrop-blur-sm rounded-t-3xl">
-              <tr className="hover:bg-muted/90 border-b">
-                <th className="w-16 text-center px-2 h-10 align-middle font-medium whitespace-nowrap">
-                  <div className="flex flex-col py-2">
-                    <span className="font-medium">Sr No</span>
-                  </div>
-                </th>
-                {columns.map((col) => (
-                  <th
-                    key={col.key}
-                    onClick={
-                      sortableFields.includes(col.key)
-                        ? () => onChange("sort", col.key)
-                        : undefined
-                    }
-                    className={cn(
-                      "px-2 h-10 text-left align-middle font-medium whitespace-nowrap transition-colors",
-                      sortableFields.includes(col.key)
-                        ? "cursor-pointer hover:bg-muted/50 text-foreground"
-                        : "cursor-default"
-                    )}
-                  >
-                    <div className={cn("flex items-center gap-1", col.key === "sr_no" && "justify-center")}>
-                      <div className="flex flex-col py-2">
-                        <span className={cn(
-                          "font-medium",
-                          sortConfig.key === col.key && "text-primary"
-                        )}>
-                          {col.title}
-                        </span>
-                        {col.subtitle && (
-                          <span className="text-[10px] leading-3 text-muted-foreground font-medium normal-case">
-                            {col.subtitle}
-                          </span>
-                        )}
-                      </div>
-                      {sortableFields.includes(col.key) && (
-                        sortConfig.key === col.key ? (
-                          sortConfig.direction === "ascending" ? (
-                            <UpIcon className="size-3" />
-                          ) : (
-                            <DownIcon className="size-3" />
-                          )
-                        ) : (
-                          <ArrowUpDownIcon className="size-3" />
-                        )
-                      )}
+        <div className="w-full overflow-hidden border border-gray-200 rounded-xl">
+          <div className={`custom-scrollbar ${data?.length > 0 ? "max-h-[calc(100vh-300px)] overflow-y-auto" : "h-[calc(100vh-300px)]"}`}>
+            <table className={cn("w-full caption-bottom text-sm", data?.length === 0 && "h-full")}>
+              <thead className="sticky top-0 z-10 bg-muted/90 backdrop-blur-sm rounded-t-3xl">
+                <tr className="hover:bg-muted/90 border-b">
+                  <th className="w-16 text-center px-2 h-10 align-middle font-medium whitespace-nowrap">
+                    <div className="flex flex-col py-2">
+                      <span className="font-medium">Sr No</span>
                     </div>
                   </th>
-                ))}
-                {!hideActions && (
-                  <th className="text-right px-4 h-10 align-middle font-medium whitespace-nowrap">Actions</th>
-                )}
-              </tr>
-            </thead>
-            <tbody className={cn("bg-white [&_tr:last-child]:border-0", data?.length === 0 && "h-full")}>
-              {isLoading ? (
-                <tr key="loading">
-                  <td
-                    colSpan={columns.length + (hideActions ? 0 : 1) + 1}
-                    className="p-2 h-24 text-center align-middle"
-                  >
-                    <div className="flex items-center justify-center space-x-2">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-                      <span className="text-muted-foreground">Loading...</span>
-                    </div>
-                  </td>
-                </tr>
-              ) : data?.length > 0 ? (
-                data.map((row, index) => {
-                  const isDisabledRow = isRowDisabled ? isRowDisabled(row) : false;
-                  const allActions = getRowActions(row.id);
-                  const visibleActions = allActions.slice(0, MAX_ICONS_TO_SHOW);
-                  const dropdownActions = allActions.slice(MAX_ICONS_TO_SHOW);
-
-                  return (
-                    <tr
-                      key={row.id || `row-${index}`}
-                      onClick={() => onRowClick?.(row)}
-                      data-state={selectedRows.includes(String(row.id)) ? "selected" : undefined}
+                  {columns.map((col) => (
+                    <th
+                      key={col.key}
+                      onClick={
+                        sortableFields.includes(col.key)
+                          ? () => onChange("sort", col.key)
+                          : undefined
+                      }
                       className={cn(
-                        "group hover:bg-muted/50 data-[state=selected]:bg-muted border-b transition-colors",
-                        isDisabledRow && "opacity-60 cursor-not-allowed",
-                        onRowClick && "cursor-pointer"
+                        "px-2 h-10 text-left align-middle font-medium whitespace-nowrap transition-colors",
+                        sortableFields.includes(col.key)
+                          ? "cursor-pointer hover:bg-muted/50 text-foreground"
+                          : "cursor-default"
                       )}
                     >
-                      <td className={`p-2 align-middle whitespace-nowrap text-center py-3`}>
-                        <TableCellContent value={(currentPage - 1) * itemsPerPage + index + 1} />
-                      </td>
-                      {columns.map((col) => {
-                        const rawValue = col.render
-                          ? col.render(
-                            row[col.key],
-                            {
-                              row,
-                              onChange: (action: string, payload?: any) =>
-                                onChange(action, { ...payload, id: row.id }),
-                            },
-                            index
+                      <div className={cn("flex items-center gap-1", col.key === "sr_no" && "justify-center")}>
+                        <div className="flex flex-col py-2">
+                          <span className={cn(
+                            "font-medium",
+                            sortConfig.key === col.key && "text-primary"
+                          )}>
+                            {col.title}
+                          </span>
+                          {col.subtitle && (
+                            <span className="text-[10px] leading-3 text-muted-foreground font-medium normal-case">
+                              {col.subtitle}
+                            </span>
+                          )}
+                        </div>
+                        {sortableFields.includes(col.key) && (
+                          sortConfig.key === col.key ? (
+                            sortConfig.direction === "ascending" ? (
+                              <UpIcon className="size-3" />
+                            ) : (
+                              <DownIcon className="size-3" />
+                            )
+                          ) : (
+                            <ArrowUpDownIcon className="size-3" />
                           )
-                          : row[col.key] ?? <span className="text-muted-foreground">-</span>;
+                        )}
+                      </div>
+                    </th>
+                  ))}
+                  {!hideActions && (
+                    <th className="text-right px-4 h-10 align-middle font-medium whitespace-nowrap">Actions</th>
+                  )}
+                </tr>
+              </thead>
+              <tbody className={cn("bg-white [&_tr:last-child]:border-0", data?.length === 0 && "h-full")}>
+                {isLoading ? (
+                  <tr key="loading">
+                    <td
+                      colSpan={columns.length + (hideActions ? 0 : 1) + 1}
+                      className="p-2 h-24 text-center align-middle"
+                    >
+                      <div className="flex items-center justify-center space-x-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                        <span className="text-muted-foreground">Loading...</span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : data?.length > 0 ? (
+                  data.map((row, index) => {
+                    const isDisabledRow = isRowDisabled ? isRowDisabled(row) : false;
+                    const allActions = getRowActions(row.id);
+                    const visibleActions = allActions.slice(0, MAX_ICONS_TO_SHOW);
+                    const dropdownActions = allActions.slice(MAX_ICONS_TO_SHOW);
 
-                        return (
-                          <td
-                            key={`${col.key}-${row.id || index}`}
-                            className={cn("p-2 align-middle whitespace-nowrap py-3", isDisabledRow && "text-muted-foreground")}
-                          >
-                            <TableCellContent value={rawValue} />
-                          </td>
-                        );
-                      })}
-                      {!hideActions && (
-                        <td className="px-4 py-3 p-2 align-middle whitespace-nowrap">
-                          <div className="flex items-center justify-end gap-2 relative">
-                            {visibleActions.map(({ key, icon, labelText, onClick, render }) => (
-                              render ? (
-                                <div key={key}>{render(labelText, { row, onChange, onClick }, index)}</div>
-                              ) : (
-                                <TooltipProvider key={key}>
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-8 w-8 border hover:cursor-pointer"
-                                        disabled={isDisabledRow}
+                    return (
+                      <tr
+                        key={row.id || `row-${index}`}
+                        onClick={() => onRowClick?.(row)}
+                        data-state={selectedRows.includes(String(row.id)) ? "selected" : undefined}
+                        className={cn(
+                          "group hover:bg-muted/50 data-[state=selected]:bg-muted border-b transition-colors",
+                          isDisabledRow && "opacity-60 cursor-not-allowed",
+                          onRowClick && "cursor-pointer"
+                        )}
+                      >
+                        <td className={`p-2 align-middle whitespace-nowrap text-center py-3`}>
+                          <TableCellContent value={(currentPage - 1) * itemsPerPage + index + 1} />
+                        </td>
+                        {columns.map((col) => {
+                          const rawValue = col.render
+                            ? col.render(
+                              row[col.key],
+                              {
+                                row,
+                                onChange: (action: string, payload?: any) =>
+                                  onChange(action, { ...payload, id: row.id }),
+                              },
+                              index
+                            )
+                            : row[col.key] ?? <span className="text-muted-foreground">-</span>;
+
+                          return (
+                            <td
+                              key={`${col.key}-${row.id || index}`}
+                              className={cn("p-2 align-middle whitespace-nowrap py-3", isDisabledRow && "text-muted-foreground")}
+                            >
+                              <TableCellContent value={rawValue} />
+                            </td>
+                          );
+                        })}
+                        {!hideActions && (
+                          <td className="px-4 py-3 p-2 align-middle whitespace-nowrap">
+                            <div className="flex items-center justify-end gap-2 relative">
+                              {visibleActions.map(({ key, icon, labelText, onClick, render }) => (
+                                render ? (
+                                  <div key={key}>{render(labelText, { row, onChange, onClick }, index)}</div>
+                                ) : (
+                                  <TooltipProvider key={key}>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className="h-8 w-8 border hover:cursor-pointer"
+                                          disabled={isDisabledRow}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            onClick?.();
+                                          }}
+                                        >
+                                          {icon}
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>{labelText}</TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                )
+                              ))}
+
+                              {dropdownActions.length > 0 && !isDisabledRow && (
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                                      <MoreIcon className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    {dropdownActions.map(({ key, label, icon, onClick }) => (
+                                      <DropdownMenuItem
+                                        key={key}
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           onClick?.();
                                         }}
                                       >
-                                        {icon}
-                                      </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>{labelText}</TooltipContent>
-                                  </Tooltip>
-                                </TooltipProvider>
-                              )
-                            ))}
-
-                            {dropdownActions.length > 0 && !isDisabledRow && (
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                                    <MoreIcon className="h-4 w-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  {dropdownActions.map(({ key, label, icon, onClick }) => (
-                                    <DropdownMenuItem
-                                      key={key}
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        onClick?.();
-                                      }}
-                                    >
-                                      <div className="flex items-center gap-2">
-                                        {icon}
-                                        {label}
-                                      </div>
-                                    </DropdownMenuItem>
-                                  ))}
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            )}
-                          </div>
-                        </td>
-                      )}
-                    </tr>
-                  );
-                })
-              ) : (
-                <tr key="no-data" className="h-full">
-                  <td
-                    colSpan={columns.length + (hideActions ? 0 : 1) + 1}
-                    className="p-2 h-full text-center align-middle"
-                  >
-                    No Data available
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div ref={paginationSentinelRef} className="h-px w-full" aria-hidden />
-
-      {/* Footer / Pagination */}
-      {totalItems > 10 && (
-      <div
-        className={cn(
-          "sticky bottom-2 transition-all duration-300",
-          isFooterStuck && "px-3"
-        )}
-      >
-        <div className={cn(
-          "flex flex-col sm:flex-row items-center justify-between gap-4 p-3 rounded-lg bg-white border",
-          isFooterStuck && "border-primary/20"
-        )}>
-
-          {/* Summary Items */}
-          <div className="flex flex-wrap items-center gap-3">
-            {footerSummary?.map((item, index) => (
-              <TooltipProvider key={index}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className={cn(
-                      "inline-flex items-center gap-2 px-3 py-1.5 rounded-md border bg-muted/50 text-sm font-medium",
-                      item.className
-                    )}>
-                      <span className="text-muted-foreground text-xs">{item.label}</span>
-                      <span className="flex items-center gap-1">
-                        {item.prefix} {item.value}
-                        {item.tooltip && <InfoIcon className="h-3.5 w-3.5 text-muted-foreground" />}
-                      </span>
-                    </div>
-                  </TooltipTrigger>
-                  {item.tooltip && <TooltipContent>{item.tooltip}</TooltipContent>}
-                </Tooltip>
-              </TooltipProvider>
-            ))}
-          </div>
-
-          {/* Pagination */}
-          <div className="flex items-center gap-4 ml-auto">
-              <UniFieldSelect
-                value={String(itemsPerPage)}
-                onValueChange={(val) => onChange("itemsPerPage", Number(val))}
-                placeholder="Rows per page"
-                containerClassName="w-[130px]"
-                size="sm"
-              >
-                <SelectItem value="20">20 / page</SelectItem>
-                <SelectItem value="50">50 / page</SelectItem>
-                <SelectItem value="100">100 / page</SelectItem>
-              </UniFieldSelect>
-
-            <div className="flex items-center gap-1">
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-9 w-9"
-                onClick={() => onPageChange(currentPage - 1)}
-                disabled={currentPage === 1}
-              >
-                <ChevronLeftIcon className="h-4 w-4" />
-              </Button>
-
-              {getPageNumbers().map((page, i) => (
-                page === '...' ? (
-                  <span key={i} className="px-2 text-muted-foreground">...</span>
+                                        <div className="flex items-center gap-2">
+                                          {icon}
+                                          {label}
+                                        </div>
+                                      </DropdownMenuItem>
+                                    ))}
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              )}
+                            </div>
+                          </td>
+                        )}
+                      </tr>
+                    );
+                  })
                 ) : (
-                  <Button
-                    key={i}
-                    variant={currentPage === page ? "default" : "ghost"}
-                    size="sm"
-                    className="h-9 w-9"
-                    onClick={() => onPageChange(Number(page))}
-                  >
-                    {page}
-                  </Button>
-                )
-              ))}
-
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-9 w-9"
-                onClick={() => onPageChange(currentPage + 1)}
-                disabled={currentPage === totalPages}
-              >
-                <ChevronRightIcon className="h-4 w-4" />
-              </Button>
-            </div>
+                  <tr key="no-data" className="h-full">
+                    <td
+                      colSpan={columns.length + (hideActions ? 0 : 1) + 1}
+                      className="p-2 h-full text-center align-middle"
+                    >
+                      No Data available
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
-      </div>
-      )}
+        <div ref={paginationSentinelRef} className="h-px w-full" aria-hidden />
 
-      {/* Delete Modal */}
+        <TableFooter
+          totalItems={totalItems}
+          itemsPerPage={itemsPerPage}
+          currentPage={currentPage}
+          onPageChange={onPageChange}
+          onChange={onChange}
+          footerSummary={footerSummary}
+          isFooterStuck={isFooterStuck}
+          totalPages={totalPages}
+          getPageNumbers={getPageNumbers}
+        />
+      </div>
+
       <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
         <DialogContent>
           <DialogHeader>
@@ -927,7 +827,8 @@ const DynamicTable = ({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
+
   );
 };
 

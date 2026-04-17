@@ -8,9 +8,9 @@ import {
   SidebarHeader,
   SidebarRail,
   SidebarTrigger,
-} from "@/components/ui/sidebar"
+  useSidebar,
+} from "./index"
 import { DashboardIcon, InventoryIcon, NextJsIcon, PanelRight, SettingIcon, SalesIcon } from "@/components/AppIcon"
-import { useSidebar } from "@/components/ui/sidebar"
 
 // This is sample data.
 export const navData = [

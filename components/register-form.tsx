@@ -4,20 +4,19 @@ import { useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import toast from "react-hot-toast"
 import * as yup from "yup"
-import { Button } from "@/components/ui/button"
 import {
+  Button,
   Field,
   FieldLabel,
-} from "@/components/ui/field"
-import { UniFieldInput } from "@/components/ui/unifield-input"
-import { UniFieldSelect } from "@/components/ui/unifield-select"
-import {
+  UniFieldInput,
+  UniFieldSelect,
   SelectItem,
-} from "@/components/ui/select"
+  Card,
+  CardContent,
+} from "./index"
 import { ImagePlusIcon } from "./AppIcon"
 import { useScrollToError } from "@/lib/hooks/index"
 import { auth } from "@/lib/api/auth"
-import { Card, CardContent } from "./ui/card"
 import { locations } from "@/lib/api/locations"
 import { businessTypeOptions } from "@/lib/utils/constants"
 

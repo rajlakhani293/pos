@@ -4,10 +4,15 @@ import { Header } from "@/components/header";
 import React, { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { AppSidebar, navData } from "@/components/app-sidebar";
-import { SidebarProvider } from "@/components/ui/sidebar";
-import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Spinner } from "@/components/ui/spinner";
-import { ModuleTabs } from "@/components/ui/module-tabs";
+import {
+  SidebarProvider,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+  Spinner,
+  ModuleTabs,
+} from "@/components/index";
 
 export default function DashboardLayout({
   children,

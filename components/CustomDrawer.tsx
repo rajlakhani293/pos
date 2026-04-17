@@ -1,9 +1,15 @@
 "use client";
 
 import { ReactNode } from "react";
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from "@/components/ui/drawer";
-import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerClose,
+  Button,
+  Spinner,
+} from "./index";
 import { X } from "lucide-react";
 
 interface CustomDrawerProps {

@@ -1,20 +1,22 @@
 "use client"
 
 import { useEffect, useState, useRef } from "@/lib/imports";
-import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
+import {
+  Button,
+  Spinner,
+  UniFieldInput,
+  UniFieldSelect,
+  SelectItem,
+  MultipleImageUpload,
+} from "@/components/index";
 import { useRouter, useParams } from "next/navigation";
 import { items } from "@/lib/api/items";
 import { getInitialFormValues, type FormField } from "@/lib/utils";
-import { UniFieldInput } from "@/components/ui/unifield-input";
-import { UniFieldSelect } from "@/components/ui/unifield-select";
-import { SelectItem } from "@/components/ui/select";
 import { LeftIcon } from "@/components/AppIcon";
 import { CategoryForm } from "@/app/(dashboard)/inventory/categories/createUpdate";
 import { UnitForm } from "@/app/(dashboard)/inventory/units/createUpdate";
 import { BrandForm } from "@/app/(dashboard)/settings/brands/createUpdate";
 import { settings } from "@/lib/api/settings";
-import { MultipleImageUpload } from "@/components/ui/multiple-image-upload";
 import { showToast } from "@/lib/toast";
 
 export default function ItemPage() {

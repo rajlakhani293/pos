@@ -4,11 +4,13 @@ import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { sales } from "@/lib/api/sales";
 import { items } from "@/lib/api/items";
-import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
-import { UniFieldInput } from "@/components/ui/unifield-input";
-import { UniFieldSelect } from "@/components/ui/unifield-select";
-import { SelectItem } from "@/components/ui/select";
+import {
+  Button,
+  Spinner,
+  UniFieldInput,
+  UniFieldSelect,
+  SelectItem,
+} from "@/components/index";
 import { showToast } from "@/lib/toast";
 
 type SalesTransaction = {

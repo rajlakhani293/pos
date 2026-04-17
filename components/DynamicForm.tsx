@@ -1,14 +1,20 @@
 "use client"
 
 import { useState, useEffect, useRef } from "@/lib/imports";
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from "@/components/ui/drawer";
-import { Button } from "@/components/ui/button";
-import { UniFieldInput } from "@/components/ui/unifield-input";
-import { UniFieldSelect } from "@/components/ui/unifield-select";
-import { ButtonGroup } from "@/components/ui/button-group";
-import { SelectItem } from "@/components/ui/select";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerClose,
+  Button,
+  UniFieldInput,
+  UniFieldSelect,
+  ButtonGroup,
+  SelectItem,
+  Spinner,
+} from "./index";
 import { CloseIcon } from "./AppIcon";
-import { Spinner } from "./ui/spinner";
 
 interface FormField {
   name: string;

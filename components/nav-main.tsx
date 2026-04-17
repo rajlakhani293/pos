@@ -4,8 +4,6 @@ import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@/components/ui/collapsible"
-import {
   SidebarGroup,
   SidebarMenu,
   SidebarMenuButton,
@@ -13,9 +11,9 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
-} from "@/components/ui/sidebar"
+  useSidebar,
+} from "./index"
 import { ChevronRightIcon } from "./AppIcon"
-import { useSidebar } from "@/components/ui/sidebar"
 import Link from "next/link"
 
 export function NavMain({

@@ -2,7 +2,7 @@
 
 import React from "react"
 import { cn } from "@/lib/utils"
-import { Input } from "@/components/ui/input"
+import { Input } from "@/components/index"
 import { Textarea } from "./textarea"
 import { Field, FieldError, FieldLabel } from "./field"
 

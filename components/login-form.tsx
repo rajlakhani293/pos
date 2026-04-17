@@ -5,17 +5,15 @@ import { useRouter } from "next/navigation"
 import toast from "react-hot-toast"
 import Cookies from "js-cookie"
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
 import {
+  Button,
   FieldDescription,
   FieldGroup,
-} from "@/components/ui/field"
-import { OTPVerification } from "@/components/otp-verification"
-import {
   Card,
   CardContent,
-} from "@/components/ui/card"
-import { UniFieldInput } from "@/components/ui/unifield-input"
+  UniFieldInput,
+} from "./index"
+import { OTPVerification } from "@/components/otp-verification"
 import { auth } from "@/lib/api/auth"
 import { useSession } from "@/lib/redux/session-provider"
 import { ViewIcon, HideIcon, CheckCircleIcon, CancelIcon, RegCircleIcon } from "./AppIcon"

@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from "react"
 import toast from "react-hot-toast"
-import { Button } from "@/components/ui/button"
 import {
+  Button,
   InputOTP,
   InputOTPGroup,
   InputOTPSlot,
-} from "@/components/ui/input-otp"
+} from "./index"
 import { MdEdit, MdOutlineDangerous } from "react-icons/md"
 import { NEXT_OTP_ATTEMPT_LIMIT, NEXT_OTP_TIMER_SECONDS } from "../lib/utils/constants"
 

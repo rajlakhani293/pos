@@ -1,19 +1,21 @@
 "use client"
 
 import { useEffect, useMemo, useState, useRef } from "@/lib/imports";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Spinner } from "@/components/ui/spinner";
+import {
+  Button,
+  Badge,
+  Spinner,
+  UniFieldInput,
+  UniFieldSelect,
+  SelectItem,
+  ButtonGroup,
+} from "@/components/index";
 import { useRouter } from "next/navigation";
 import { sales } from "@/lib/api/sales";
 import { settings } from "@/lib/api/settings";
 import { items } from "@/lib/api/items";
 import { getInitialFormValues, type FormField } from "@/lib/utils";
-import { UniFieldInput } from "@/components/ui/unifield-input";
-import { UniFieldSelect } from "@/components/ui/unifield-select";
-import { SelectItem } from "@/components/ui/select";
 import { SearchIcon, TrashIcon } from "@/components/AppIcon";
-import { ButtonGroup } from "@/components/ui/button-group";
 import { PartyForm } from "@/app/(dashboard)/settings/parties/createUpdate";
 import { TaxForm } from "@/app/(dashboard)/settings/taxes/createUpdate";
 import { showToast } from "@/lib/toast";

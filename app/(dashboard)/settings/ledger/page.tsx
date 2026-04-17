@@ -3,15 +3,20 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTableData } from "@/hooks/useTableData";
 import DynamicTable from "@/components/DynamicTable";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { MonthYearPicker } from "@/components/date-picker";
+import {
+  Button,
+  Input,
+  Textarea,
+  MonthYearPicker,
+  Spinner,
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/index";
 import dayjs from "dayjs";
 import CustomDrawer from "@/components/CustomDrawer";
-import { Spinner } from "@/components/ui/spinner";
 import { settings } from "@/lib/api/settings";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { showToast } from "@/lib/toast";
 
 const CustomerLedgerPage = () => {

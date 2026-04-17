@@ -2,32 +2,29 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { sales } from "@/lib/api/sales";
-import { Spinner } from "@/components/ui/spinner";
 import {
+  Spinner,
   Card,
   CardAction,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import {
   ChartContainer,
   ChartLegend,
   ChartLegendContent,
   ChartTooltip,
   ChartTooltipContent,
-  type ChartConfig,
-} from "@/components/ui/chart";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import {
+  ToggleGroup,
+  ToggleGroupItem,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from "@/components/index";
+import type { ChartConfig } from "@/components/index";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer } from "recharts";
 
 type DashboardStats = {

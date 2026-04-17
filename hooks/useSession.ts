@@ -5,11 +5,12 @@ import { useMemo } from 'react'
 // Main hook that provides all session data
 export function useSession() {
   const sessionData = useSelector((state: RootState) => state.session)
-  
+
   return useMemo(() => {
     const {
       user,
-      shop,
+      company,
+      branch,
       shopList,
       isSessionLoaded,
       isUnauthorized,
@@ -17,12 +18,13 @@ export function useSession() {
       sessionUpdateMessage,
       serverError
     } = sessionData
-    
+
     const isAuthenticated = isSessionLoaded && !!user
 
     return {
       user,
-      shop,
+      company,
+      branch,
       shopList,
       isSessionLoaded,
       isUnauthorized,
@@ -40,7 +42,16 @@ export function useUser() {
 }
 
 export function useShop() {
-  return useSelector((state: RootState) => state.session.shop)
+  // For backward compatibility, return company as shop
+  return useSelector((state: RootState) => state.session.company)
+}
+
+export function useCompany() {
+  return useSelector((state: RootState) => state.session.company)
+}
+
+export function useBranch() {
+  return useSelector((state: RootState) => state.session.branch)
 }
 
 export function useShopList() {

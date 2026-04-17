@@ -6,7 +6,7 @@ import { items } from "@/lib/api/items";
 import { useTableData } from "@/hooks/useTableData";
 import DynamicTable from "@/components/DynamicTable";
 import StockForm from "@/components/StockForm";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/index";
 import { MOVEMENT_LABELS } from "@/lib/utils/constants";
 
 interface StockViewProps {
