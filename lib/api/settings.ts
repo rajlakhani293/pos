@@ -33,7 +33,19 @@ const endpointsConfig = {
   addPartyPayment: { query: createMutation("party-payment") },
   getPaymentHistory: { query: postMutation("payments/get-transactions") },
 
-  
+  // Companies
+  editCompany: { query: ({ id, payLoad }: { id: any; payLoad: any }) => putMutation(`companies/${id}`, payLoad) },
+  getCompanyById: { query: ({ id }: { id: number }) => getMutation(`companies/${id}`) },
+
+  // Branch
+  getBranchDropdown: { query: () => getMutation("branches-dropdown") },
+  getBranchesData: { query: postMutation("branches/get-transactions") },
+  createBranch: { query: createMutation("branches/") },
+  editBranch: { query: ({ id, payLoad }: { id: any; payLoad: any }) => putMutation(`branches/${id}`, payLoad) },
+  deleteBranch: { query: deleteMutation("branches/delete") },
+  getBranchById: { query: ({ id }: { id: number }) => getMutation(`branches/${id}`) },
+  switchBranch: { query: ({ id }: { id: number }) => getMutation(`branches/switch/${id}`) },
+
 }
 
 export const settings = createApi({

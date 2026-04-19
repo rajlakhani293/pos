@@ -57,7 +57,7 @@ interface DynamicFormProps<T> {
   validationSchema?: any;
   formWidth?: string | number;
   extra?: (formikProps: any) => React.ReactNode;
-  onFieldChange?: (name: string, value: any) => void;
+  onFieldChange?: (name: string, value: any, allValues: T) => T | void;
   isLoading?: boolean;
 }
 
@@ -136,13 +136,17 @@ const DynamicForm = <T extends Record<string, any>>({
   };
 
   const handleChange = (name: string, value: any) => {
-    setFormData((prev: T) => ({ ...prev, [name]: value } as T));
+    const newFormData = { ...formData, [name]: value } as T;
+    setFormData(newFormData);
     
     const error = validateField(name, value);
     setErrors((prev: Record<string, string>) => ({ ...prev, [name]: error }));
 
     if (onFieldChange) {
-      onFieldChange(name, value);
+      const updatedValues = onFieldChange(name, value, newFormData);
+      if (updatedValues) {
+        setFormData(updatedValues);
+      }
     }
   };
 
@@ -234,7 +238,7 @@ const DynamicForm = <T extends Record<string, any>>({
         <div className="flex-1 overflow-y-auto p-6 relative">
           {isLoading && (
             <div className="absolute inset-0 bg-background/80 flex items-center justify-center z-10">
-              <div className="flex flex-col items-center gap-2">
+              <div className="flex flex-row items-center gap-2">
                 <Spinner />
                 <span className="text-sm text-muted-foreground">Loading...</span>
               </div>

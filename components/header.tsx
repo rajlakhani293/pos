@@ -1,7 +1,7 @@
 "use client"
 
-import { useId, useEffect, useRef } from "react";
-import { Search, Bell, Settings, LogOut, User, Key, Building2 } from "lucide-react";
+import { useId, useEffect, useRef, useState } from "react";
+import { Search, Bell, Settings, LogOut, User, Key, Building2, MapPin, ChevronRight, Check, Globe } from "lucide-react";
 import {
   Input,
   DropdownMenu,
@@ -16,9 +16,75 @@ import {
 } from "./index";
 import { useSession } from "@/hooks/useSession";
 import { auth } from "@/lib/api/auth";
+import { settings } from "@/lib/api/settings";
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
 import { showToast } from "@/lib/toast";
+
+const BranchSwitcher = () => {
+  const { branch, branchList } = useSession();
+  const [switchBranch] = settings.useSwitchBranchMutation();
+
+  const handleSwitch = async (branchItem: any) => {
+    if (branch?.id === branchItem.id) return;
+
+    try {
+      const res: any = await switchBranch({ id: branchItem.id }).unwrap();
+      if (res.success && res.data?.access) {
+        Cookies.set("token", res.data.access);
+        window.location.reload();
+      }
+    } catch (e) {
+      showToast.error("Failed to switch branch");
+    }
+  };
+
+  // Only show branch info if company has multiple branches
+  if (!branchList || branchList.length < 2) return null;
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button className="flex items-center gap-2 p-2 rounded-lg transition-colors group hover:bg-gray-100">
+          <div className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600">
+            <MapPin className="w-4 h-4" />
+          </div>
+          <div className="text-left hidden md:block">
+            <p className="text-sm font-semibold text-gray-800 leading-tight">
+              {branch?.branch_name || "Main Branch"}
+            </p>
+            <p className="text-[10px] text-gray-500 font-medium">Current Location</p>
+          </div>
+          <ChevronRight className="w-3 h-3 text-gray-400 transition-transform" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="w-64 p-1 border shadow-lg">
+        <DropdownMenuLabel className="font-normal p-2 px-3">
+          <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Select Branch</p>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator className="bg-gray-200" />
+        <div className="max-h-[250px] overflow-y-auto p-1">
+          {branchList.map((branchItem: any) => {
+            const isActive = branch?.id === branchItem.id;
+            return (
+              <DropdownMenuItem
+                key={branchItem.id}
+                onClick={() => handleSwitch(branchItem)}
+                className={`cursor-pointer rounded-md text-sm transition-colors ${isActive
+                  ? "bg-indigo-100 text-indigo-700"
+                  : "text-gray-700 hover:bg-gray-100"
+                  }`}
+              >
+                <span className="font-medium truncate flex-1">{branchItem.branch_name}</span>
+                {isActive && <Check className="w-3 h-3" />}
+              </DropdownMenuItem>
+            )
+          })}
+        </div>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+};
 
 export function Header() {
   const triggerId = useId();
@@ -59,19 +125,25 @@ export function Header() {
 
   return (
     <header className="h-16 border-b bg-white flex items-center justify-between px-6 w-full sticky top-0 z-10">
-      <div className="flex items-center gap-4 flex-1">
+      <div className="flex items-center gap-2 flex-1">
         {/* Company Info Card */}
-        <div className="hidden lg:flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 hover:bg-gray-100 transition-colors">
-          <Building2 className="h-4 w-4 text-gray-600" />
-          <span className="text-sm font-medium text-gray-700">{company?.company_name || "Company"}</span>
-        </div>
+        <button className="flex items-center gap-2 p-2 rounded-lg transition-colors group hover:bg-gray-100">
+          <div className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600">
+            <Building2 className="w-4 h-4" />
+          </div>
+          <div className="text-left">
+            <p className="text-sm font-semibold text-gray-800 leading-tight">
+              {company?.company_name || "Company"}
+            </p>
+            <p className="text-[10px] text-gray-500 font-medium">Company</p>
+          </div>
+        </button>
 
-        {/* Branch Info Card */}
-        <div className="hidden lg:flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 hover:bg-gray-100 transition-colors">
-          <span className="text-sm font-medium text-gray-600">{branch?.branch_name || "Branch"}</span>
-        </div>
+        <div className="h-8 w-px bg-gray-200 mx-2 md:block"></div>
 
-        <div className="relative w-full sm:max-w-xs">
+        <BranchSwitcher />
+
+        {/* <div className="relative w-full sm:max-w-[200px]">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             ref={searchInputRef}
@@ -82,7 +154,7 @@ export function Header() {
           <kbd className="hidden sm:inline-flex absolute right-3 p-1 top-1/2 -translate-y-1/2 h-5 select-none items-center gap-1 rounded border bg-white font-mono text-xs font-medium text-slate-400 opacity-100 pointer-events-none uppercase">
             <span className="text-sm">⌘</span>S
           </kbd>
-        </div>
+        </div> */}
       </div>
 
       <div className="flex items-center gap-4">

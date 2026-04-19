@@ -49,7 +49,7 @@ export const navData = [
     },
     {
       title: "Settings",
-      url: "/settings/taxes",
+      url: "/settings/companies",
       icon: SettingIcon
     }
   ]

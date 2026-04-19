@@ -11,7 +11,7 @@ export function useSession() {
       user,
       company,
       branch,
-      shopList,
+      branchList,
       isSessionLoaded,
       isUnauthorized,
       permissionError,
@@ -25,7 +25,7 @@ export function useSession() {
       user,
       company,
       branch,
-      shopList,
+      branchList,
       isSessionLoaded,
       isUnauthorized,
       permissionError,
@@ -55,7 +55,8 @@ export function useBranch() {
 }
 
 export function useShopList() {
-  return useSelector((state: RootState) => state.session.shopList)
+  // For backward compatibility, return branchList as shopList
+  return useSelector((state: RootState) => state.session.branchList)
 }
 
 export function useSessionLoading() {

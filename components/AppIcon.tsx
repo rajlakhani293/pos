@@ -15,7 +15,7 @@ import { AiOutlineDashboard, AiOutlineEye, AiOutlineEyeInvisible } from "react-i
 import { IoIosCloseCircleOutline, IoMdClose, IoMdEye } from "react-icons/io";
 import { SiNextdotjs } from "react-icons/si";
 import { IoImagesOutline, IoSettingsOutline } from "react-icons/io5";
-import { AudioWaveform, BadgeCheck, Bell, BookOpen, Bot, CheckIcon, ChevronDownIcon, ChevronLeft, ChevronRight, ChevronsUpDown, ChevronUpIcon, CircleIcon, Command, CreditCard, Folder, Forward, Frame, GalleryVerticalEnd, LogOut, Map, MinusIcon, MoreHorizontal, PanelLeftIcon, PanelRightIcon, PieChart, Plus, Settings2, Sparkles, SquareTerminal, Trash2 } from 'lucide-react';
+import { AudioWaveform, BadgeCheck, Bell, BookOpen, Bot, Building, CheckIcon, ChevronDownIcon, ChevronLeft, ChevronRight, ChevronsUpDown, ChevronUpIcon, CircleIcon, Command, CreditCard, Folder, Forward, Frame, GalleryVerticalEnd, LogOut, Map, MinusIcon, MoreHorizontal, PanelLeftIcon, PanelRightIcon, PieChart, Plus, Settings2, Sparkles, SquareTerminal, Trash2, TreePine } from 'lucide-react';
 import { LuArrowUpDown, LuCirclePlus } from "react-icons/lu";
 import { FiEdit, FiMoreVertical } from "react-icons/fi";
 import { BiSearchAlt2 } from "react-icons/bi";
@@ -86,6 +86,8 @@ export const PersonPlusIcon = BsPersonPlusFill;
 export const TagIcon = FaTag;
 export const TaxIcon = TbReceiptTax;
 export const NextIcon = RiNextjsFill;
+export const BuildingIcon = Building;
+export const BranchIcon = TreePine;
 
 export const ImagePlusIcon = ({ className = "" }: { className?: string }) => (
   <svg 

@@ -3,10 +3,20 @@
 import { usePathname, useRouter } from "next/navigation"
 import React from "react"
 import { cn } from "@/lib/utils"
-import { CreditCardIcon, PersonPlusIcon, TagIcon, TaxIcon } from "@/components/AppIcon"
+import { BranchIcon, BuildingIcon, CreditCardIcon, PersonPlusIcon, TagIcon, TaxIcon } from "@/components/AppIcon"
 
 const data = {
   navMain: [
+    {
+      title: "Companies",
+      url: "/settings/companies",
+      icon: BuildingIcon
+    },
+    {
+      title: "Branches",
+      url: "/settings/branches",
+      icon: BranchIcon
+    },
     {
       title: "Tax",
       url: "/settings/taxes",
@@ -88,8 +98,8 @@ export default function SettingsLayout({
       </div>
 
       {/* Right Content Area */}
-      <div className="flex-1 py-6 pr-6 h-full overflow-x-auto">
-        <main className="rounded-2xl border bg-gray-100/5 p-6 h-full">
+      <div className="flex-1 py-6 pr-6 h-full">
+        <main className="rounded-2xl border bg-gray-100/5 p-6 h-full overflow-y-auto">
           {children}
         </main>
       </div>

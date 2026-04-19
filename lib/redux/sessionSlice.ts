@@ -55,6 +55,14 @@ interface Branch {
   state_id?: number;
   country_id?: number;
   company_id?: number;
+  status?: number;
+}
+
+interface BranchListItem {
+  id: number;
+  branch_name: string;
+  city__name?: string;
+  state__name?: string;
 }
 
 interface SessionState {
@@ -73,7 +81,7 @@ interface SessionState {
   user: User | null;
   company: Company | null;
   branch: Branch | null;
-  shopList: any[];
+  branchList: BranchListItem[];
   isSessionLoaded: boolean;
 }
 
@@ -85,7 +93,7 @@ const initialState: SessionState = {
   user: null,
   company: null,
   branch: null,
-  shopList: [],
+  branchList: [],
   isSessionLoaded: false,
 };
 
@@ -107,19 +115,18 @@ const sessionSlice = createSlice({
     },
     setSessionData: (state, action: PayloadAction<any>) => {
       const data = action.payload;
-      // Handle new API response structure
-      if (data.user) state.user = data.user;
-      if (data.company) state.company = data.company;
-      if (data.branch) state.branch = data.branch;
-      if (data.shop_list) state.shopList = data.shop_list;
-      // Backward compatibility: handle old shop field if present
-      if (data.shop) state.company = data.shop;
+      // Handle new API response structure with data wrapper
+      const sessionData = data.data || data;
+      if (sessionData.user) state.user = sessionData.user;
+      if (sessionData.company) state.company = sessionData.company;
+      if (sessionData.branch) state.branch = sessionData.branch;
+      if (sessionData.branch_list) state.branchList = sessionData.branch_list;
     },
     clearSessionData: (state) => {
       state.user = null;
       state.company = null;
       state.branch = null;
-      state.shopList = [];
+      state.branchList = [];
       state.isSessionLoaded = false;
       state.isUnauthorized = false;
       state.permissionError = null;

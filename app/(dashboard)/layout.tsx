@@ -77,7 +77,7 @@ export default function DashboardLayout({
 
   return (
     <>
-      <div className="flex h-screen w-full overflow-hidden">
+      <div className="relative flex w-screen h-screen overflow-hidden">
         <aside className="h-full shrink-0">
           <SidebarProvider>
             <AppSidebar />
