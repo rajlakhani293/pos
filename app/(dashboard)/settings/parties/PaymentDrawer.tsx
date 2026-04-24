@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Input, Textarea } from "@/components/index";
+import { Button, UniFieldInput } from "@/components/index";
 import CustomDrawer from "@/components/CustomDrawer";
 
 type PaymentDrawerProps = {
@@ -13,6 +13,7 @@ type PaymentDrawerProps = {
   onPaymentNoteChange: (value: string) => void;
   onAddPayment: () => void;
   paymentSaving: boolean;
+  amountError?: string;
 };
 
 export const PaymentDrawer = ({
@@ -25,6 +26,7 @@ export const PaymentDrawer = ({
   onPaymentNoteChange,
   onAddPayment,
   paymentSaving,
+  amountError,
 }: PaymentDrawerProps) => {
   return (
     <CustomDrawer
@@ -36,25 +38,24 @@ export const PaymentDrawer = ({
       width={600}
     >
       <div className="space-y-4">
-        <div className="space-y-1">
-          <div className="text-xs text-muted-foreground">Amount</div>
-          <Input
-            type="number"
-            min="0"
-            placeholder="Enter amount"
-            value={paymentAmount}
-            onChange={(e) => onPaymentAmountChange(e.target.value)}
-          />
-        </div>
-        <div className="space-y-1">
-          <div className="text-xs text-muted-foreground">Note</div>
-          <Textarea
-            rows={3}
-            placeholder="Optional note"
-            value={paymentNote}
-            onChange={(e) => onPaymentNoteChange(e.target.value)}
-          />
-        </div>
+        <UniFieldInput
+          label="Amount"
+          type="number"
+          min={0}
+          placeholder="Enter amount"
+          value={paymentAmount}
+          onChange={(e) => onPaymentAmountChange(e.target.value)}
+          required
+          error={amountError}
+        />
+        <UniFieldInput
+          label="Note"
+          as="textarea"
+          rows={3}
+          placeholder="Optional note"
+          value={paymentNote}
+          onChange={(e) => onPaymentNoteChange(e.target.value)}
+        />
         <Button
           className="w-full"
           onClick={onAddPayment}

@@ -18,6 +18,7 @@ const Parties = () => {
   const [selectedParty, setSelectedParty] = useState<any>(null);
   const [paymentAmount, setPaymentAmount] = useState<string>("");
   const [paymentNote, setPaymentNote] = useState<string>("");
+  const [amountError, setAmountError] = useState<string>("");
   const [addPartyPayment, { isLoading: paymentSaving }] = settings.useAddPartyPaymentMutation();
   const {
     orders,
@@ -71,6 +72,7 @@ const Parties = () => {
     setSelectedParty(row);
     setPaymentAmount("");
     setPaymentNote("");
+    setAmountError("");
     setPaymentDrawerOpen(true);
     // Blur the active element to prevent aria-hidden accessibility issue
     (document.activeElement as HTMLElement)?.blur();
@@ -84,9 +86,11 @@ const Parties = () => {
 
     const amountNumber = Number(paymentAmount || 0);
     if (!amountNumber || amountNumber <= 0) {
-      showToast.error("Enter a valid payment amount");
+      setAmountError("Enter a valid payment amount");
       return;
     }
+
+    setAmountError("");
 
     try {
       await addPartyPayment({
@@ -227,10 +231,14 @@ const Parties = () => {
           partyName={selectedParty?.name || ""}
           paymentAmount={paymentAmount}
           paymentNote={paymentNote}
-          onPaymentAmountChange={setPaymentAmount}
+          onPaymentAmountChange={(value) => {
+            setPaymentAmount(value);
+            setAmountError("");
+          }}
           onPaymentNoteChange={setPaymentNote}
           onAddPayment={handleAddPayment}
           paymentSaving={paymentSaving}
+          amountError={amountError}
         />
       </div>
     </>

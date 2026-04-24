@@ -37,6 +37,12 @@ const endpointsConfig = {
   editCompany: { query: ({ id, payLoad }: { id: any; payLoad: any }) => putMutation(`companies/${id}`, payLoad) },
   getCompanyById: { query: ({ id }: { id: number }) => getMutation(`companies/${id}`) },
 
+  // Users
+  editUser: { query: ({ id, payLoad }: { id: any; payLoad: any }) => putMutation(`users/${id}`, payLoad) },
+  getUserById: { query: ({ id }: { id: number }) => getMutation(`users/${id}`) },
+  sendPasswordOtp: { query: postMutation("users/send-password-otp") },
+  updateUserPassword: { query: postMutation("users/update-password") },
+
   // Branch
   getBranchDropdown: { query: () => getMutation("branches-dropdown") },
   getBranchesData: { query: postMutation("branches/get-transactions") },

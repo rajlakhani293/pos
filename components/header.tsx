@@ -125,12 +125,15 @@ export function Header() {
 
   return (
     <header className="h-16 border-b bg-white flex items-center justify-between px-6 w-full sticky top-0 z-10">
-      <div className="flex items-center gap-2 flex-1">
+      <div className="flex items-center gap-1 flex-1">
         {/* Company Info Card */}
         <button className="flex items-center gap-2 p-2 rounded-lg transition-colors group hover:bg-gray-100">
-          <div className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600">
-            <Building2 className="w-4 h-4" />
-          </div>
+          <Avatar className="h-8 w-8 border-2 border-white shadow-sm ring-1 ring-gray-100">
+            <AvatarImage src={company?.logo_image} />
+            <AvatarFallback className="bg-indigo-50 text-indigo-600">
+              <Building2 className="w-4 h-4" />
+            </AvatarFallback>
+          </Avatar>
           <div className="text-left">
             <p className="text-sm font-semibold text-gray-800 leading-tight">
               {company?.company_name || "Company"}
@@ -166,7 +169,7 @@ export function Header() {
               className="flex items-center gap-3 cursor-pointer p-1 hover:bg-gray-100 rounded-lg transition-colors group"
             >
               <Avatar className="h-9 w-9 border-2 border-white shadow-sm ring-1 ring-gray-100 group-hover:ring-blue-200 transition-all">
-                <AvatarImage src={company?.logo_image_url} />
+                <AvatarImage src={user?.profile_image} />
                 <AvatarFallback className="bg-blue-600 text-white font-bold text-xs" suppressHydrationWarning>{initials}</AvatarFallback>
               </Avatar>
             </div>
@@ -188,7 +191,10 @@ export function Header() {
                 <Settings className="mr-2 h-4 w-4" />
                 <span className="font-medium">Account Settings</span>
               </DropdownMenuItem>
-              <DropdownMenuItem className="cursor-pointer rounded-md focus:bg-blue-50 focus:text-blue-700">
+              <DropdownMenuItem
+                className="cursor-pointer rounded-md focus:bg-blue-50 focus:text-blue-700"
+                onClick={() => router.push('/settings/users?openPasswordModal=true')}
+              >
                 <Key className="mr-2 h-4 w-4" />
                 <span className="font-medium">Change Password</span>
               </DropdownMenuItem>

@@ -366,9 +366,9 @@ export default function ItemPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <Spinner />
-          <p className="mt-2 text-gray-600">Loading item data...</p>
+        <div className="flex items-center gap-3">
+          <Spinner className="h-6 w-6" />
+          <p className="text-gray-600">Loading item data...</p>
         </div>
       </div>
     );

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import * as yup from "yup";
 import { settings } from "@/lib/api/settings";
 import { locations } from "@/lib/api/locations";
@@ -14,6 +14,7 @@ import { useSession } from "@/hooks/useSession";
 const validationSchema = yup.object().shape({
   company_name: yup.string().required("Company Name is required"),
   phone_number: yup.string().required("Phone Number is required"),
+  email: yup.string().email("Invalid email format").required("Email is required"),
   country: yup.string().required("Country is required"),
   state: yup.string().required("State is required"),
   city: yup.string().required("City is required"),
@@ -53,6 +54,7 @@ const Companies = () => {
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const lastLoadedCompanyId = useRef<string | undefined>(undefined);
 
   /** Submit handler */
   const handleSubmit = async (e: React.FormEvent) => {
@@ -70,7 +72,7 @@ const Companies = () => {
       if (formData.business_type_id) formDataObj.append('business_type_id', parseInt(formData.business_type_id).toString());
       const fullPhoneNumber = formData.phone_number ? `+91${formData.phone_number}` : "";
       formDataObj.append('phone_number', fullPhoneNumber);
-      if (formData.email) formDataObj.append('email', formData.email);
+      formDataObj.append('email', formData.email);
       if (formData.tax_no) formDataObj.append('tax_no', formData.tax_no);
       if (formData.pan_no) formDataObj.append('pan_no', formData.pan_no);
       if (formData.address) formDataObj.append('address', formData.address);
@@ -101,7 +103,7 @@ const Companies = () => {
       } else {
         showToast.error(error);
       }
-    }
+    }  
     setIsSubmitting(false);
   };
 
@@ -216,6 +218,10 @@ const Companies = () => {
   };
 
   useEffect(() => {
+    // Only load if companyId has changed
+    if (companyId === lastLoadedCompanyId.current) return;
+    lastLoadedCompanyId.current = companyId;
+
     setIsLoading(true);
     loadCountries().finally(() => {
       if (companyId) {
@@ -239,7 +245,22 @@ const Companies = () => {
 
   return (
     <>
-      <h1 className="text-2xl font-bold mb-6">Company Settings</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Company Settings</h1>
+        <Button type="submit" disabled={isSubmitting} onClick={(e) => {
+          e.preventDefault();
+          handleSubmit(e);
+        }}>
+          {isSubmitting ? (
+            <span className="flex items-center gap-2">
+              <Spinner />
+              Saving...
+            </span>
+          ) : (
+            "Save Changes"
+          )}
+        </Button>
+      </div>
       <form onSubmit={handleSubmit} className="space-y-4 max-w-4xl h-full">
         <div className="grid grid-cols-[200px_1fr] gap-4 items-start">
           <label className="text-sm font-medium text-right pt-2">Company Logo</label>
@@ -289,7 +310,7 @@ const Companies = () => {
         </div>
 
         <div className="grid grid-cols-[200px_1fr] gap-4 items-center">
-          <label className="text-sm font-medium text-right">Email</label>
+          <label className="text-sm font-medium text-right">Email <span className="text-red-500">*</span></label>
           <UniFieldInput
             placeholder="e.g. company@example.com"
             type="email"
@@ -399,19 +420,6 @@ const Companies = () => {
             maxLength={6}
             error={errors.pincode}
           />
-        </div>
-
-        <div className="flex justify-end gap-3 pt-4">
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? (
-              <span className="flex items-center gap-2">
-                <Spinner />
-                Saving...
-              </span>
-            ) : (
-              "Save Changes"
-            )}
-          </Button>
         </div>
       </form>
     </>

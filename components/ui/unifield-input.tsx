@@ -48,28 +48,32 @@ export const UniFieldInput = React.forwardRef<HTMLInputElement, UniFieldInputPro
       if (props.type === 'number' && (min !== undefined || max !== undefined || maxLength !== undefined)) {
         const valueStr = e.target.value;
         let validatedValueStr = valueStr;
-        
+
         // Apply maxLength validation
         if (maxLength !== undefined && valueStr.length > maxLength) {
           validatedValueStr = valueStr.slice(0, maxLength);
         }
-        
-        const value = parseFloat(validatedValueStr) || 0;
+
+        const value = parseFloat(validatedValueStr);
         let validatedValue = value;
-        
-        // Apply min validation
-        if (min !== undefined && value < parseFloat(min.toString())) {
+
+        // Apply min validation (only if value is a valid number)
+        if (!isNaN(value) && min !== undefined && value < parseFloat(min.toString())) {
           validatedValue = parseFloat(min.toString());
         }
-        
-        // Apply max validation
-        if (max !== undefined && value > parseFloat(max.toString())) {
+
+        // Apply max validation (only if value is a valid number)
+        if (!isNaN(value) && max !== undefined && value > parseFloat(max.toString())) {
           validatedValue = parseFloat(max.toString());
         }
-        
+
         // Update input value to show validated value
-        e.target.value = validatedValueStr;
-        
+        if (!isNaN(validatedValue)) {
+          e.target.value = validatedValue.toString();
+        } else {
+          e.target.value = validatedValueStr;
+        }
+
         // Call original onChange with validated value
         if (onChange) {
           onChange(e);

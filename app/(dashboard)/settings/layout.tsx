@@ -3,7 +3,7 @@
 import { usePathname, useRouter } from "next/navigation"
 import React from "react"
 import { cn } from "@/lib/utils"
-import { BranchIcon, BuildingIcon, CreditCardIcon, PersonPlusIcon, TagIcon, TaxIcon } from "@/components/AppIcon"
+import { BranchIcon, BuildingIcon, CreditCardIcon, PersonPlusIcon, TagIcon, TaxIcon, UserIcon } from "@/components/AppIcon"
 
 const data = {
   navMain: [
@@ -16,6 +16,11 @@ const data = {
       title: "Branches",
       url: "/settings/branches",
       icon: BranchIcon
+    },
+    {
+      title: "Users",
+      url: "/settings/users",
+      icon: UserIcon
     },
     {
       title: "Tax",
@@ -41,7 +46,7 @@ const data = {
       title: "Payments",
       url: "/settings/payments",
       icon: CreditCardIcon
-    },
+    }
   ]
 }
 

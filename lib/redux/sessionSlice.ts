@@ -28,7 +28,7 @@ interface Company {
   id: number;
   company_name: string;
   company_code: string;
-  logo_image_url?: string;
+  logo_image?: string;
   website_url?: string;
   business_type_id?: number;
   tax_no?: string;
