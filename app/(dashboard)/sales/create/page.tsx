@@ -9,13 +9,14 @@ import {
   UniFieldSelect,
   SelectItem,
   ButtonGroup,
+  SearchIcon,
+  TrashIcon,
 } from "@/components/index";
 import { useRouter } from "next/navigation";
 import { sales } from "@/lib/api/sales";
 import { settings } from "@/lib/api/settings";
 import { items } from "@/lib/api/items";
 import { getInitialFormValues, type FormField } from "@/lib/utils";
-import { SearchIcon, TrashIcon } from "@/components/AppIcon";
 import { PartyForm } from "@/app/(dashboard)/settings/parties/createUpdate";
 import { TaxForm } from "@/app/(dashboard)/settings/taxes/createUpdate";
 import { showToast } from "@/lib/toast";
@@ -145,7 +146,7 @@ export default function CreateSalePage() {
     discount_amount: "",
     discount_value: "",
     total_amount: "",
-    paid_amount: "0",
+    paid_amount: "",
     payment_mode: "1",
     transactions: []
   }));

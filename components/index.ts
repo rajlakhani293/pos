@@ -16,6 +16,18 @@ export { MultipleImageUpload } from "@/components/ui/multiple-image-upload";
 export { Separator } from "@/components/ui/separator";
 export { Skeleton } from "@/components/ui/skeleton";
 
+// Custom Components
+export { default as DynamicTable } from "@/components/DynamicTable";
+export { default as CustomDrawer } from "@/components/CustomDrawer";
+export { default as ImageUpload } from "@/components/ImageUpload";
+
+// App Icons
+export {
+  LeftIcon,
+  SearchIcon,
+  TrashIcon,
+} from "@/components/AppIcon";
+
 // Dropdown Menu
 export {
   DropdownMenu,

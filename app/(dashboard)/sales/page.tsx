@@ -2,14 +2,12 @@
 
 import { useMemo, useState, useCallback } from "react";
 import { useTableData } from "@/hooks/useTableData";
-import DynamicTable from "@/components/DynamicTable";
 import { sales } from "@/lib/api/sales";
 import { useRouter } from "next/navigation";
 import dayjs from "dayjs";
 import { showToast } from "@/lib/toast";
-import CustomDrawer from "@/components/CustomDrawer";
 import { Edit } from "lucide-react";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/index";
+import { DynamicTable, CustomDrawer, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/index";
 import { PAYMENT_MODE_CHOICES } from "@/lib/utils/constants";
 
 const toNumber = (value: number | string | undefined | null) => Number(value || 0);
