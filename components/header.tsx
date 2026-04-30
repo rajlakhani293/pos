@@ -183,13 +183,12 @@ export function Header() {
             </DropdownMenuLabel>
             <DropdownMenuSeparator className="bg-gray-100" />
             <div className="p-1 space-y-0.5">
-              <DropdownMenuItem className="cursor-pointer rounded-md focus:bg-blue-50 focus:text-blue-700">
+              <DropdownMenuItem
+                className="cursor-pointer rounded-md focus:bg-blue-50 focus:text-blue-700"
+                onClick={() => router.push('/settings/users')}
+              >
                 <User className="mr-2 h-4 w-4" />
                 <span className="font-medium">My Profile</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem className="cursor-pointer rounded-md focus:bg-blue-50 focus:text-blue-700">
-                <Settings className="mr-2 h-4 w-4" />
-                <span className="font-medium">Account Settings</span>
               </DropdownMenuItem>
               <DropdownMenuItem
                 className="cursor-pointer rounded-md focus:bg-blue-50 focus:text-blue-700"
